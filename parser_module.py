@@ -14,6 +14,7 @@ class Parse:
         :param text:
         :return:
         """
+
         text_tokens = word_tokenize(text)
         text_tokens_without_stopwords = [w.lower() for w in text_tokens if w not in self.stop_words]
         return text_tokens_without_stopwords

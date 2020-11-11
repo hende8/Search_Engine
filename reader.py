@@ -17,7 +17,6 @@ class ReadFile:
         full_path = os.path.join(self.corpus_path, file_name)
         df = pd.read_parquet(full_path, engine="pyarrow")
         list = df.values.tolist()
-        print(list)
         return list
 
     def read_all_files(self):

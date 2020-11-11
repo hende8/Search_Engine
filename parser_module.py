@@ -34,10 +34,9 @@ class Parse:
         quote_text = doc_as_list[6]
         quote_url = doc_as_list[7]
         term_dict = {}
+        print(full_text)
         tokenized_text = self.parse_sentence(full_text)
-
         doc_length = len(tokenized_text)  # after text operations.
-
         for term in tokenized_text:
             if term not in term_dict.keys():
                 term_dict[term] = 1

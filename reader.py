@@ -30,7 +30,6 @@ class ReadFile:
 
         df = pd.read_parquet(full_path, engine="pyarrow")
         list = df.values.tolist()
-        print(list)
         return list
 
     def read_all_files(self):

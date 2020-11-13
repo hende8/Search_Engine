@@ -11,14 +11,13 @@ from numerize import numerize as nume
 class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
-    def parse_sentence(self, text):
+    def parse_text(self, text):
         """
         This function tokenize, remove stop words and apply lower case for every word within the text
         :param text:
         :return:
         """
         text= "10000 People @go to #footballStadium in http://www.walla.com with 100 percent of winning"
-        print(word_tokenize(text))
         text=self.parse_percentage(text)
         text= self.convert_str_to_number(text)
         # array_text_ = text.split()

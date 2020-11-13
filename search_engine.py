@@ -49,12 +49,13 @@ def run_engine():
     documents_list_after_parse=[]
     # Iterate over every document in the file
     for idx, document in enumerate(documents_list):
-        # parse the document
-        if idx ==4 or idx==5 :
-            parsed_document = p.parse_doc(document,idx)
-            number_of_documents += 1
-            add_to_dictionary_and_letters(parsed_document)
-            documents_list_after_parse.append(parsed_document)
+    # parse the document
+        parsed_document = p.parse_doc(document)
+        number_of_documents += 1
+        add_to_dictionary_and_letters(parsed_document)
+        documents_list_after_parse.append(parsed_document)
+        if idx==1:
+            break
     reorganize_dictionary_with_capital_letters()
     reorganize_documents_with_capital_letters(documents_list_after_parse)
 

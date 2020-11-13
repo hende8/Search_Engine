@@ -5,19 +5,23 @@ from nltk.stem import WordNetLemmatizer,PorterStemmer
 from nltk import pos_tag
 import re
 from numerize import numerize as nume
+import stemmer as st
 
 
 
 class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
-    def parse_sentence(self, text):
+    def parse_sentence(self, text,idx):
         """
         This function tokenize, remove stop words and apply lower case for every word within the text
         :param text:
         :return:
         """
-        text= "10000 People @go to #footballStadium in http://www.walla.com with 100 percent of winning"
+        # if idx==4 :
+            # text= "35.66 204000 3/4 People @go to #footballStadium in http://www.walla.com/fox-news/tucker-carlson-says-masks-and-social-distancing-have-no-basis-any-kind-science with 100 percent of Winning"
+        # else:
+            # text= "35.66 204000 3/4 people @go to #footballStadium in http://www.walla.com/fox-news/tucker-carlson-says-masks-and-social-distancing-have-no-basis-any-kind-science with 100 percent of"
         print(word_tokenize(text))
         text=self.parse_percentage(text)
         text= self.convert_str_to_number(text)
@@ -38,11 +42,6 @@ class Parse:
                 for word_hash_tag in self.parse_hashtag(word):
                     text_without_stopwords.append(word_hash_tag)
                 text_without_stopwords.remove(word)
-        for i in range(len(text_without_stopwords)):
-            if bool(re.search(r'\d', text_without_stopwords[i])):
-                continue
-            else:
-                text_without_stopwords[i]=text_without_stopwords[i].lower()
         return text_without_stopwords
 
     def parse_hashtag(self,phrase):
@@ -77,7 +76,29 @@ class Parse:
         temp_website_name = url_str[index]+"." + url_str[index+1]
         url_str[index] = temp_website_name
         del url_str[index+1:index+2]
-        print(url_str)
+        # array_length = len(url_str)
+        # for term,idx in zip(url_str,range(array_length)):
+        #     print(idx)
+        #     if "-" in term:
+        #         temp=re.split("-",term)
+        #         for term_temp,idx_within in zip(temp,range(len(temp))):
+        #             url_str.insert(idx, term_temp)
+        #             idx+=1
+        #             array_length+=1
+        #         url_str.remove(term)
+        index_while=0
+        while index_while < len(url_str):
+            if "-" in url_str[index_while]:
+                temp=re.split("-",url_str[index_while])
+                for term_temp,idx_within in zip(temp,range(len(temp))):
+                    url_str.insert(index_while, term_temp)
+                    index_while+=1
+                print (url_str[index_while])
+                url_str.remove(url_str[index_while])
+            else:
+                index_while+=1
+
+
         return url_str
 
     def isfloat(value):
@@ -141,6 +162,25 @@ class Parse:
                     text_demo[i] = nume.numerize(number, 3)
 
         return ' '.join(text_demo)
+
+
+    def get_long_url(self, url):
+        """
+
+        :param url: 2 two url . short and long
+        :return:  long
+        """
+        c = '"'
+        array=  ([pos for pos, char in enumerate(url) if char == c])
+        start = array[0]
+        stop = array[1]+1
+        # Remove charactes from index 5 to 10
+        if len(url) > stop:
+            url = url[0: start:] + url[stop + 1::]
+        url = url[:-2:]
+        url = url[2::]
+        return url
+
     def parse_percentage(self,string):
         """
         change word to percent
@@ -163,7 +203,7 @@ class Parse:
         del text_array[index:index+1]
         return ' '.join(text_array)
 
-    def parse_doc(self, doc_as_list):
+    def parse_doc(self, doc_as_list,idx):
         """
         This function takes a tweet document as list and break it into different fields
         :param doc_as_list: list re-preseting the tweet.
@@ -178,11 +218,19 @@ class Parse:
         quote_text = doc_as_list[6]
         quote_url = doc_as_list[7]
         term_dict = {}
-        print(full_text)
-        tokenized_text = self.parse_sentence(full_text)
-        print(tokenized_text)
+        ##parse sentence
+        tokenized_text = self.parse_sentence(full_text,idx)
+        ##parse url
+        if not str(url):
+            url=self.get_long_url(url)
+            url_parsed = self.parse_url(url)
+            for word in url_parsed:
+                tokenized_text.append(word)
+        #steming
         doc_length = len(tokenized_text)  # after text operations.
+
         for term in tokenized_text:
+            term=st.Stemmer().stem_term(term)
             if term not in term_dict.keys():
                 term_dict[term] = 1
             else:

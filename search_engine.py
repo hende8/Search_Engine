@@ -5,7 +5,33 @@ from indexer import Indexer
 from searcher import Searcher
 import utils
 
-
+# dictionary that check if big letter show twice
+dictionary_phrase_and_letters = {}
+def add_to_dictionary_and_letters(parsed_document):
+    for term in parsed_document.term_doc_dictionary:
+            if term not in dictionary_phrase_and_letters.keys():
+                dictionary_phrase_and_letters[term] = 1
+            else:
+                dictionary_phrase_and_letters[term] += 1
+def reorganize_dictionary_with_capital_letters():
+    for term in list(dictionary_phrase_and_letters.keys()):
+        if term[0].isupper():
+            word_letter_low = term[0].lower() + term[1:]
+            if word_letter_low in dictionary_phrase_and_letters.keys():
+                dictionary_phrase_and_letters[word_letter_low]  =dictionary_phrase_and_letters[word_letter_low] + dictionary_phrase_and_letters[term]
+                del dictionary_phrase_and_letters[term]
+def reorganize_documents_with_capital_letters( documents_list):
+    for idx, document in enumerate(documents_list):
+        for term in list(document.term_doc_dictionary):
+            if term[0].isupper():
+                word_letter_low = term[0].lower() + term[1:]
+                if word_letter_low in dictionary_phrase_and_letters.keys():
+                    document.term_doc_dictionary[word_letter_low] = document.term_doc_dictionary[term]
+                    del document.term_doc_dictionary[term]
+                else:
+                    temp_upper_word = term.upper()
+                    document.term_doc_dictionary[temp_upper_word] = document.term_doc_dictionary[term]
+                    del document.term_doc_dictionary[term]
 def run_engine():
     """
 
@@ -20,13 +46,21 @@ def run_engine():
 
     # documents_list = r.read_file(file_name='sample3.parquet')
     documents_list = r.read_all_files()
+    documents_list_after_parse=[]
     # Iterate over every document in the file
     for idx, document in enumerate(documents_list):
         # parse the document
-        parsed_document = p.parse_doc(document)
-        number_of_documents += 1
-        # index the document data
-        indexer.add_new_doc(parsed_document)
+        if idx ==4 or idx==5 :
+            parsed_document = p.parse_doc(document,idx)
+            number_of_documents += 1
+            add_to_dictionary_and_letters(parsed_document)
+            documents_list_after_parse.append(parsed_document)
+    reorganize_dictionary_with_capital_letters()
+    reorganize_documents_with_capital_letters(documents_list_after_parse)
+
+    # index the document data
+    for doc in documents_list_after_parse:
+        indexer.add_new_doc(doc)
     print('Finished parsing and indexing. Starting to export files')
 
     utils.save_obj(indexer.inverted_idx, "inverted_idx")

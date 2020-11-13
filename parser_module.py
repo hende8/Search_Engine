@@ -1,54 +1,116 @@
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from document import Document
+from nltk.stem import WordNetLemmatizer,PorterStemmer
+from nltk import pos_tag
+import re
 from numerize import numerize as nume
 
 
-class Parse:
 
+class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
-
     def parse_sentence(self, text):
         """
         This function tokenize, remove stop words and apply lower case for every word within the text
         :param text:
         :return:
         """
-        text_tokens = word_tokenize(text)
-        text = "10000"
+        text= "10000 People @go to #footballStadium in http://www.walla.com with 100 percent of winning"
+        print(word_tokenize(text))
+        text=self.parse_percentage(text)
+        text= self.convert_str_to_number(text)
+        # array_text_ = text.split()
+        ## IMPORTANT ##
+        # take care of phrases
+        array_text_ =text.split(' ')
+        text_without_stopwords=[]
+        index=0
+        for word in array_text_:
+            if word not in self.stop_words:
+                text_without_stopwords.append(word)
+            if "www" in word or "https" in word or "http" in word:
+                for word_www in self.parse_url(word):
+                    text_without_stopwords.append(word_www)
+                text_without_stopwords.remove(word)
+            elif word[0] == '#':
+                for word_hash_tag in self.parse_hashtag(word):
+                    text_without_stopwords.append(word_hash_tag)
+                text_without_stopwords.remove(word)
+        for i in range(len(text_without_stopwords)):
+            if bool(re.search(r'\d', text_without_stopwords[i])):
+                continue
+            else:
+                text_without_stopwords[i]=text_without_stopwords[i].lower()
+        return text_without_stopwords
 
-        text_demo = Parse.convert_str_to_number(text_demo)
-        print(text_demo)
-        text_tokens_without_stopwords_ex = [w.lower() for w in text_demo if w not in self.stop_words]
-        print(text_tokens_without_stopwords_ex)
+    def parse_hashtag(self,phrase):
+        """"
+        parser hash tag and lower the letters
+        return array of string
+        #stayAtHome -> ['@stayathome',stay,at,home]
+        """
+        original_phrase=phrase
+        pattern = re.compile(r"[A-Z][a-z]+|\d+|[A-Z]+(?![a-z])")
+        temp_phrase = list(phrase)
+        if temp_phrase[1].islower():
+            temp_phrase[1]=temp_phrase[1].upper()
+        phrase="".join(temp_phrase)
+        temp = pattern.findall(phrase)
+        temp = [str_to_lower.lower() for str_to_lower in temp]
+        temp.insert(0,original_phrase[0:len(original_phrase)].lower().replace('_',''))
+        return temp
 
-        text_tokens_without_stopwords = [w.lower() for w in text_tokens if w not in self.stop_words]
-        return text_tokens_without_stopwords
+    def parse_url(self,string):
+        """
+        parsing url path
+        return an array of the components
+        """
+        if "www" in string and ("https" in string or "http" in string):
+            index=2
+        elif "http" in string and "www" not in string:
+            index=1
+        elif "www" in string and "http" not in string and "https" not in string:
+            index = 1
+        url_str =re.split(r"[/:\.?=&]+",string)
+        temp_website_name = url_str[index]+"." + url_str[index+1]
+        url_str[index] = temp_website_name
+        del url_str[index+1:index+2]
+        print(url_str)
+        return url_str
 
     def isfloat(value):
+        """
+            check if value is a float number
+        :return: boolean
+        """
         try:
             float(value)
             return True
         except ValueError:
             return False
-
-    def convert_str_to_number(text_demo):
-        text_demo = word_tokenize(text)
-
+    def convert_str_to_number(self, text_demo):
+        """
+        convert the string to number
+        :param text_demo: text to parse to K\B\M
+        :return: array
+            10000 -> 10K
+            1000000-> 1M
+        """
+        text_demo=text_demo.split()
         for i in range(len(text_demo)):
             if text_demo[i].isdecimal() or Parse.isfloat(text_demo[i]):
                 number = float(text_demo[i])
-                if i+1 < len(text_demo):
-                    token_next = text_demo[i+1].lower()
+                if i + 1 < len(text_demo):
+                    token_next = text_demo[i + 1].lower()
                     number_to_input = str(nume.numerize(number, 3))
                     if token_next.__eq__("billion"):
                         if 'K' in nume.numerize(number, 3) or 'M' in nume.numerize(number, 3):
                             number_to_input = (number_to_input.translate({ord('K'): None}))
                             number_to_input = (number_to_input.translate({ord('M'): None}))
                             text_demo[i] = number_to_input + 'B'
-                            del (text_demo[i+1])
+                            del (text_demo[i + 1])
                         else:
                             text_demo[i] = str(nume.numerize(number, 3))
                     elif token_next.__eq__("million"):
@@ -73,11 +135,33 @@ class Parse:
                             del (text_demo[i + 1])
                     elif 1000 > number > -1000:
                         text_demo[i] = nume.numerize(number, 3)
+                    else:
+                        text_demo[i] = nume.numerize(number, 3)
                 else:
                     text_demo[i] = nume.numerize(number, 3)
 
-        return text_demo
-
+        return ' '.join(text_demo)
+    def parse_percentage(self,string):
+        """
+        change word to percent
+        100 percent -> 100%
+        :param string: string to check if there is a percent within
+        :return: array of converted strings
+        """
+        text_array=string.split()
+        if "percent" in text_array:
+            index=text_array.index("percent")
+        elif "percentage" in text_array:
+            index = text_array.index("percentage")
+        elif "Percentage" in text_array:
+            index = text_array.index("Percentage")
+        elif "Percent" in text_array:
+            index = text_array.index("Percent")
+        else:
+            return ' '.join(text_array)
+        text_array[index - 1] =text_array[index - 1] + '%'
+        del text_array[index:index+1]
+        return ' '.join(text_array)
 
     def parse_doc(self, doc_as_list):
         """
@@ -94,7 +178,9 @@ class Parse:
         quote_text = doc_as_list[6]
         quote_url = doc_as_list[7]
         term_dict = {}
+        print(full_text)
         tokenized_text = self.parse_sentence(full_text)
+        print(tokenized_text)
         doc_length = len(tokenized_text)  # after text operations.
         for term in tokenized_text:
             if term not in term_dict.keys():

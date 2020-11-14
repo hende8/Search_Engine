@@ -6,7 +6,7 @@ from nltk.stem import WordNetLemmatizer,PorterStemmer
 class Stemmer:
     def __init__(self):
         self.stemmer = snowball.SnowballStemmer("english")
-        self.stemmer = PorterStemmer()
+        # self.stemmer = PorterStemmer()
 
     def stem_term(self, token):
         """

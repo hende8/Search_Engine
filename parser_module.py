@@ -5,44 +5,58 @@ from nltk.stem import WordNetLemmatizer,PorterStemmer
 from nltk import pos_tag
 import re
 from numerize import numerize as nume
-
-
+import spacy
 
 class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
+        names_places = {"": ""}
+
     def parse_text(self, text):
         """
         This function tokenize, remove stop words and apply lower case for every word within the text
         :param text:
         :return:
         """
-        text= "10000 People @go to #footballStadium in http://www.walla.com with 100 percent of winning"
-        text=self.parse_percentage(text)
-        text= self.convert_str_to_number(text)
-        # array_text_ = text.split()
-        ## IMPORTANT ##
+        text = "The Queen Elis 10000 People @go to #footballStadium. Donald Trump in New-York COVID-19 http://www.walla.com with 100 percent Alex Cohen-Levi in Tel Aviv"
+        names_and_entities = self.get_name_and_entities(text)
+        text = self.parse_percentage(text)
+        text = self.convert_str_to_number(text)
         # take care of phrases
-        array_text_ = text.split(' ')
-        text_without_stopwords=[]
+        # text = self.remove_panctuation(text)
+        array_text_ = text
+        text_without_stopwords = []
         index = 0
         for word in array_text_:
-            if word not in self.stop_words:
+            check_stop_word = word[0].lower() + word[1:]
+            if word not in self.stop_words and check_stop_word not in self.stop_words:
                 text_without_stopwords.append(word)
+            else:
+                continue
             if "www" in word or "https" in word or "http" in word:
                 for word_www in self.parse_url(word):
-                    text_without_stopwords.append(word_www)
+                    if word_www not in self.stop_words:
+                        text_without_stopwords.append(word_www)
                 text_without_stopwords.remove(word)
-            elif word[0] == '#':
+                continue
+            if "-" in word:
+                splited_array = self.split_makaf(word)
+                for word_ in splited_array:
+                    if word_ not in text_without_stopwords:
+                        text_without_stopwords.append(word_)
+            if word[0] == '#':
                 for word_hash_tag in self.parse_hashtag(word):
                     text_without_stopwords.append(word_hash_tag)
                 text_without_stopwords.remove(word)
-        for i in range(len(text_without_stopwords)):
-            if bool(re.search(r'\d', text_without_stopwords[i])):
-                continue
-            else:
-                text_without_stopwords[i]=text_without_stopwords[i].lower()
-        return text_without_stopwords
+        return text_without_stopwords, names_and_entities
+
+    def split_makaf(self, word):
+        if word[0].isnumeric() or word[len(word) - 1].isnumeric():
+            array = []
+            array.append(word)
+            return array
+        else:
+            return word.split("-")
 
     def parse_hashtag(self, phrase):
         """"
@@ -72,11 +86,32 @@ class Parse:
             index = 1
         elif "www" in string and "http" not in string and "https" not in string:
             index = 1
-        url_str =re.split(r"[/:\.?=&]+",string)
-        temp_website_name = url_str[index]+"." + url_str[index+1]
+        url_str = re.split(r"[/:\.?=&]+", string)
+        temp_website_name = url_str[index] + "." + url_str[index + 1]
         url_str[index] = temp_website_name
-        del url_str[index+1:index+2]
-        #print(url_str)
+        del url_str[index + 1:index + 2]
+        # array_length = len(url_str)
+        # for term,idx in zip(url_str,range(array_length)):
+        #     print(idx)
+        #     if "-" in term:
+        #         temp=re.split("-",term)
+        #         for term_temp,idx_within in zip(temp,range(len(temp))):
+        #             url_str.insert(idx, term_temp)
+        #             idx+=1
+        #             array_length+=1
+        #         url_str.remove(term)
+        index_while = 0
+        while index_while < len(url_str):
+            if "-" in url_str[index_while]:
+                temp = re.split("-", url_str[index_while])
+                for term_temp, idx_within in zip(temp, range(len(temp))):
+                    url_str.insert(index_while, term_temp)
+                    index_while += 1
+                print(url_str[index_while])
+                url_str.remove(url_str[index_while])
+            else:
+                index_while += 1
+
         return url_str
 
     def isfloat(self, value):
@@ -141,8 +176,24 @@ class Parse:
                 if text_demo[i].__eq__("Billion") or text_demo[i].__eq__("Million") or text_demo[i].__eq__("Thousand"):
                     continue
                 text_return.append(text_demo[i])
+        return text_return
 
-        return ' '.join(text_return)
+    def get_long_url(self, url):
+        """
+
+        :param url: 2 two url . short and long
+        :return:  long
+        """
+        c = '"'
+        array=  ([pos for pos, char in enumerate(url) if char == c])
+        start = array[0]
+        stop = array[1]+1
+        # Remove charactes from index 5 to 10
+        if len(url) > stop:
+            url = url[0: start:] + url[stop + 1::]
+        url = url[:-2:]
+        url = url[2::]
+        return url
 
     def parse_percentage(self, string):
         """
@@ -151,9 +202,9 @@ class Parse:
         :param string: string to check if there is a percent within
         :return: array of converted strings
         """
-        text_array=string.split()
+        text_array = string.split()
         if "percent" in text_array:
-            index=text_array.index("percent")
+            index = text_array.index("percent")
         elif "percentage" in text_array:
             index = text_array.index("percentage")
         elif "Percentage" in text_array:
@@ -162,8 +213,8 @@ class Parse:
             index = text_array.index("Percent")
         else:
             return ' '.join(text_array)
-        text_array[index - 1] =text_array[index - 1] + '%'
-        del text_array[index:index+1]
+        text_array[index - 1] = text_array[index - 1] + '%'
+        del text_array[index:index + 1]
         return ' '.join(text_array)
 
     def remove_panctuation(self, text):
@@ -173,13 +224,63 @@ class Parse:
                 :return: tweet without panctuation
                 """
         i = 0
-        for char in text:
-            chars = set('.,:;!()-=+')
-            chars.add("\"'")
-            if any((c in chars) for c in char):
-                text = text.replace(str(char), "")
+        array_of_text = str.split(text)
+        chars = set('.,:;!()-=+')
+        chars.add("\'")
+        for word in array_of_text:
+            if "www" in word or "http" in word or "https" in word:
+                i+=1
+                continue
+
+            for char in word:
+                if any((c in chars) for c in char):
+                    word = word.replace(str(char), "")
+                    array_of_text[i] = word
             i = i + 1
-        return text
+
+        return ' '.join(array_of_text)
+
+    def get_name_and_entities(self,text):
+        array_text = text.split()
+        array_names_and_entities= {}
+        entity=""
+        idx=0
+        while idx < len(array_text):
+            if array_text[idx][0].isupper():
+                entity =array_text[idx]
+                first_index=idx
+                check_stop_word =array_text[idx][0].lower() + array_text[idx][1:]
+                if check_stop_word in self.stop_words:
+                    while idx + 1 < len(array_text) and array_text[idx + 1][0].isupper():
+                        entity += " " + array_text[idx + 1]
+                        idx += 1
+                else:
+                    while idx + 1 < len(array_text) and array_text[idx + 1][0].isupper():
+                        entity += " " + array_text[idx + 1]
+                        idx += 1
+                array_names_and_entities[entity]=first_index
+            idx+=1
+        return array_names_and_entities
+
+    def switch_long_url_in_short(self,text,url):
+        array = text.split(" ")
+
+        for word,idx in enumerate(array):
+            if "http" in word:
+                print ("yyyy")
+            if "www" in word or "http" in word or "https" in word:
+                array[idx] =self.get_long_url(url)
+                break
+        return " ".join(array)
+
+    def remove_words_with_hashtag_and_more(self, text, dict_hard_words):
+        i = 0
+        for term in text:
+            chars = set('@#$%')
+            if any((c in chars) for c in term):
+                dict_hard_words[str(i)] = text[i]
+                text.remove(text[i])
+            i = i + 1
 
     def parse_doc(self, doc_as_list):
         """
@@ -199,8 +300,16 @@ class Parse:
         quote_url = doc_as_list[9]
         quote_indices = doc_as_list[10]
         term_dict = {}
-        tokenized_text = self.parse_text(full_text)
 
+        if str(url) != "{}":
+            # url = self.parse_url(url)
+            full_text = self.switch_long_url_in_short(full_text)
+        # parse text
+        tokenized_text, names_and_entities = self.parse_text(full_text)
+        # parse url
+        #
+        # for term in url:
+        #     tokenized_text.append(term)
         doc_length = len(tokenized_text)  # after text operations.
         for term in tokenized_text:
             if term not in term_dict.keys():
@@ -215,7 +324,7 @@ class Parse:
             if any((c in chars) for c in term):
                 dict_hard_words[str(i)] = tokenized_text[i]
                 tokenized_text.remove(tokenized_text[i])
-            i = i+1
+            i = i + 1
 
         document = Document(tweet_id, tweet_date, full_text, url, retweet_text, retweet_url, quote_text,
                             quote_url, term_dict, doc_length)

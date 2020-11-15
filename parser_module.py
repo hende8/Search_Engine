@@ -19,7 +19,7 @@ class Parse:
         :param text:
         :return:
         """
-        text= "https://walla.com THE DOLLAR’s ... computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with 100 percent Alex Cohen-Levi in Tel Aviv"
+        text= "https://walla.com THE DOLLAR’s 35 3/5 computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with 100 percent Alex Cohen-Levi in Tel Aviv"
         #text = text.replace("…", " ")
         text = self.remove_panctuation(text)
         # index_of_words={}
@@ -39,7 +39,8 @@ class Parse:
             else:
                 continue
             if "www" in word or "https" in word or "http" in word:
-                for word_www in self.parse_url(word):
+                url_str = self.parse_url(word)
+                for word_www in url_str:
                     if word_www not in self.stop_words:
                         text_without_stopwords.append(word_www)
                 text_without_stopwords.remove(word)
@@ -50,12 +51,13 @@ class Parse:
                     if word_ not in text_without_stopwords:
                         text_without_stopwords.append(word_)
             if word[0] == '#' and len(word)>1:
-                for word_hash_tag in self.parse_hashtag(word):
+                hashtag_str = self.parse_hashtag(word)
+                for word_hash_tag in hashtag_str:
                     text_without_stopwords.append(word_hash_tag)
                 text_without_stopwords.remove(word)
 
-
         return text_without_stopwords,names_and_entities
+
     def split_makaf(self,word):
         if word[0].isnumeric() or word[len(word)-1].isnumeric():
             array=[]
@@ -63,6 +65,7 @@ class Parse:
             return array
         else:
             return word.split("-")
+
     def parse_hashtag(self, phrase):
         """"
         parser hash tag and lower the letters
@@ -101,7 +104,8 @@ class Parse:
         while index_while < len(url_str):
             if "-" in url_str[index_while]:
                 temp=re.split("-",url_str[index_while])
-                for term_temp,idx_within in zip(temp,range(len(temp))):
+                range_temp = range(len(temp))
+                for term_temp,idx_within in zip(temp,range_temp):
                     url_str.insert(index_while, term_temp)
                     index_while+=1
                 url_str.remove(url_str[index_while])
@@ -120,6 +124,10 @@ class Parse:
         except ValueError:
             return False
 
+    def isFraction(self, token):
+        values = token.split('/')
+        return len(values) == 2 and all(i.isdigit() for i in values)
+
     def convert_str_to_number(self, text_demo):
         """
         convert the string to number
@@ -130,7 +138,8 @@ class Parse:
         """
         text_demo = text_demo.split()
         text_return = []
-        for i in range(len(text_demo)):
+        range_textdemo = range(len(text_demo))
+        for i in range_textdemo:
 
             if text_demo[i].isdecimal() or self.isfloat(text_demo[i]):
                 if math.isnan(float(text_demo[i])):
@@ -139,41 +148,48 @@ class Parse:
                 if i + 1 < len(text_demo):
                     token_next = text_demo[i + 1].lower()
                     number_to_input = str(nume.numerize(number, 3))
+                    if self.isFraction(token_next):
+                        text_return.append(number_to_input)
+                        number_to_input = number_to_input + " " + token_next
+                        text_return.append(number_to_input)
+                        continue
+                    number_numerize = nume.numerize(number, 3)
                     if token_next.__eq__("billion"):
-                        if 'K' in nume.numerize(number, 3) or 'M' in nume.numerize(number, 3):
+                        if 'K' in number_numerize or 'M' in number_numerize:
                             number_to_input = (number_to_input.translate({ord('K'): None}))
                             number_to_input = (number_to_input.translate({ord('M'): None}))
                             text_return.append(text_demo[i])
                         else:
-                            text_return.append(str(nume.numerize(number, 3) + 'B'))
+                            text_return.append(str(number_numerize + 'B'))
                     elif token_next.__eq__("million"):
-                        if 'K' in nume.numerize(number, 3):
+                        if 'K' in number_numerize:
                             number_to_input = (number_to_input.translate({ord('K'): None}))
                             text_return.append(number_to_input + 'B')
                         else:
-                            number_to_input = str(nume.numerize(number, 3))
+                            number_to_input = str(number_numerize)
                             text_return.append(number_to_input + 'M')
                     elif token_next.__eq__("thousand"):
-                        if 'K' in nume.numerize(number, 3):
+                        if 'K' in number_numerize:
                             number_to_input = (number_to_input.translate({ord('K'): None}))
                             text_return.append(number_to_input + 'M')
-                        elif 'M' in nume.numerize(number, 3):
+                        elif 'M' in number_numerize:
                             number_to_input = (number_to_input.translate({ord('M'): None}))
                             text_return.append(number_to_input + 'B')
                         else:
                             text_return.append(number_to_input + 'K')
                     elif 1000 > number > -1000:
-                        text_return.append(nume.numerize(number, 3))
+                        text_return.append(number_numerize)
                     else:
-                        text_return.append(nume.numerize(number, 3))
+                        text_return.append(number_numerize)
                 else:
-                    text_return.append(nume.numerize(number, 3))
+                    text_return.append(number_numerize)
             else:
                 if text_demo[i].__eq__("billion") or text_demo[i].__eq__("million") or text_demo[i].__eq__("thousand"):
                     continue
                 if text_demo[i].__eq__("Billion") or text_demo[i].__eq__("Million") or text_demo[i].__eq__("Thousand"):
                     continue
                 text_return.append(text_demo[i])
+        return ' '.join(text_return)
 
     def get_long_url(self, url):
         """
@@ -222,7 +238,7 @@ class Parse:
                 """
         i = 0
         array_of_text = str.split(text)
-        chars = set('.,:;!()=+…')
+        chars = set('.,:;!()[]{}=+…')
         for word in array_of_text:
             if "www" in word or "http" in word or "https" in word:
                 i += 1
@@ -244,11 +260,13 @@ class Parse:
             i = i + 1
 
         return ' '.join(array_of_text)
+
     def get_name_and_entities(self,text):
         array_text = text.split()
         array_names_and_entities = {}
         idx = 0
-        while idx < len(array_text):
+        len_array_text = len(array_text)
+        while idx < len_array_text:
             current_word = array_text[idx]
             if current_word[0].isupper():
                 entity =array_text[idx]
@@ -257,7 +275,8 @@ class Parse:
                 if check_stop_word in self.stop_words and idx+1 <len(array_text) and not array_text[idx+1][0].isupper():
                     idx+=1
                     continue
-                while idx+1 < len(array_text) and array_text[idx+1][0].isupper():
+                first_char_array = array_text[idx+1][0].isupper()
+                while idx+1 < len_array_text and first_char_array:
                     entity +=" "+array_text[idx+1]
                     idx+=1
                 if entity in array_names_and_entities.keys():
@@ -277,27 +296,37 @@ class Parse:
 
     def switch_long_url_in_short(self,text,url):
         text=text.replace("\n"," ")
-        index_null= url.find("null")
-        if index_null!=-1:
-            url = url[:index_null] + '"' + url[index_null:index_null+4]+'"'+url[index_null+4:]
+        list_null = [m.start() for m in re.finditer("null", url)]
+        quote = 0 #when add quote before and after null, we add 2 more chars and change the index of the next null
+        len_list = range(len(list_null))
+        for i in len_list:
+            if str(url)[list_null[i] + quote - 1] == ':':
+                url = url[:list_null[i] + quote] + '"' + url[list_null[i] + quote:list_null[i] + quote + 4] + '"' + url[list_null[i] + quote + 4:]
+                quote += 2
+        #index_null= url.find("null")
+        #if index_null!=-1 and str(url)[index_null-1] == ':':
+        #    url = url[:index_null] + '"' + url[index_null:index_null+4]+'"'+url[index_null+4:]
         dic_url = ast.literal_eval(url)
         array = text.split(" ")
         idx=0
         idx_value=0
         values = list(dic_url.values())
         keys = list(dic_url.keys())
-        for word in  array:
+        for word in array:
             if "www" in word or "https" in word or "http" in word:
-                if index_null!=-1 and values[idx_value] == "null" :
-                    array[idx]= keys[idx_value]
+                current_value = values[idx_value]
+                current_key = keys[idx_value]
+                if current_value == "null":
+                    array[idx]= current_key
                     idx += 1
                     idx_value+=1
                     continue
-                if word == keys[idx_value]:
-                    array[idx]=values[idx_value]
+                if word == current_key:
+                    array[idx]=current_value
+                    idx_value +=1
                     if idx_value+1>=len(values):
                         break
-                idx_value += 1
+                #idx_value += 1
             idx+=1
         return " ".join(array)
 
@@ -322,11 +351,9 @@ class Parse:
         quote_indices = doc_as_list[10]
         term_dict = {}
         doc_length = len(full_text.split(" "))
+
         #and tweet_id=="1280919843924070402"
         if str(url)!="{}" and ( "www" in full_text or "https" in full_text or "http" in full_text):
-            print(tweet_id)
-            print(full_text)
-            print(url)
             full_text= self.switch_long_url_in_short(full_text,url)
         #parse text
         tokenized_text,names_and_entities = self.parse_text(full_text)

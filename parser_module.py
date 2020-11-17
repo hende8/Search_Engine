@@ -14,107 +14,75 @@ class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
         self.dictionary= {}
-    def parse_text(self, text):
+    def parse_sentence(self, text):
         """
         This function tokenize, remove stop words and apply lower case for every word within the text
         :param text:
         :return:
         """
-        text= "1000 https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with  percent Alex Cohen-Levi in Tel Aviv"
+        # text= "8/3 https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with 100 percent Alex Cohen-Levi in Tel Aviv"
         #text = text.replace("…", " ")
-
-
+        text = "https:"
         array_text_space = text.split(" ")
         string_ans =""
         array_size = range(len(array_text_space))
         string_ans_index=0
         for word,idx in zip(array_text_space,array_size):
-            if not self.is_ascii(word) or word=="":
-                continue
-            if "www" in word or "https" in word or "http" in word:
+            if word == "": continue
+            if len(word)>3 and (("www" in word or "https" in word or "http" in word) and "www." != word and word[0]!='@' and word != "https://"):
+                if word == "http" or word == "https" or word == "https:" or word == "https:/"or word == "https://":
+                    continue
                 ans = self.add_to_dictionary(self.parse_url(word),string_ans_index)
-                string_ans+=ans+" "
+                string_ans+=ans
                 string_ans_index += len(word)+1
                 continue
             else:
-                if word[0] != '#' and len(word)>1:
+                if len(word)>1 and word[0] != '#':
                     word = self.remove_panctuation(word)
-                elif word[0]=='#' and len(word)==1:
+                elif word == "" or (word[0]=='#' and len(word)==1):
                     continue
-            if word[0] == '#' and len(word)>1:
+                if not self.is_ascii(word) or word == "":
+                    continue
+            if len(word)>1 and word[0] == '#':
                 ans = self.add_to_dictionary(self.parse_hashtag(word),string_ans_index)
-                string_ans+=ans+" "
-                string_ans_index += len(word)+1
-            elif word[0] == '#' and len(word)==1:
-                ans = self.add_to_dictionary(self.remove_panctuation(word),string_ans_index)
-                string_ans+=ans+" "
-                string_ans_index += len(word)+1
-            elif word[0] == '@' and len(word)>1:
-                string_ans+=self.add_to_dictionary(word,string_ans_index)+" "
-                string_ans_index += len(word)+1
+                string_ans+=ans
+                string_ans_index += len(ans)+1
+            elif len(word)==1 and word[0] == '#':
+                continue
+            elif len(word)>1 and word[0] == '@':
+                string_ans+=self.add_to_dictionary(word,string_ans_index)
+                string_ans_index += len(word)
             elif "percent" == word or "Percent" == word or "Percentage" ==word or "percentage" ==word:
                 if(idx>0 and self.isfloat(array_text_space[idx-1])):
                     ans=self.add_to_dictionary(self.parse_percentage(array_text_space[idx-1]+" "+word),string_ans_index)
-                    string_ans+= ans +" "
-                    string_ans_index += len(word)+1
+                    newstr = string_ans[:len(string_ans)-len(word)-1] + string_ans[len(string_ans)+len(word):]
+                    string_ans= newstr+ans
+                    string_ans_index += len(newstr)
+                else:
+                    string_ans += self.add_to_dictionary(word, string_ans_index)
+                    string_ans_index += len(word)
             elif word.isdecimal() or self.isfloat(word) or self.isFraction(word):
                 ans =self.add_to_dictionary(self.convert_str_to_number(array_text_space,idx), string_ans_index)
-                string_ans += ans + " "
-                string_ans_index += len(word)+1
+                string_ans += ans
+                string_ans_index += len(word)
             else:
-                string_ans+=self.add_to_dictionary(word,string_ans_index)+" "
-                string_ans_index += len(word)+1
-        ##remove stopwords
-        #
-        #
-        #
-        #
-        # text = self.remove_panctuation(text)
-        # # index_of_words={}
-        # # for word,idx in enumerate(text.split(" ")):
-        # #     index_of_words[word]=idx
-        # names_and_entities = self.get_name_and_entities(text)
-        # text=self.parse_percentage(text)
-        # text= self.convert_str_to_number(text)
-        # # take care of phrases
-        # array_text_ = text
-        # text_without_stopwords = []
-        # index = 0
-        # for word in array_text_:
-        #     check_stop_word = word[0].lower() + word[1:]
-        #     if word not in self.stop_words and check_stop_word not in self.stop_words:
-        #         text_without_stopwords.append(word)
-        #     else:
-        #         continue
-        #     if "www" in word or "https" in word or "http" in word:
-        #         url_str = self.parse_url(word)
-        #         for word_www in url_str:
-        #             if word_www not in self.stop_words:
-        #                 text_without_stopwords.append(word_www)
-        #         text_without_stopwords.remove(word)
-        #         continue
-        #     # if "-" in word:
-        #     #     splited_array = self.split_makaf(word)
-        #     #     for word_ in splited_array:
-        #     #         if word_ not in text_without_stopwords:
-        #     #             text_without_stopwords.append(word_)
-        #     if word[0] == '#' and len(word)>1:
-        #         hashtag_str = self.parse_hashtag(word)
-        #         for word_hash_tag in hashtag_str:
-        #             text_without_stopwords.append(word_hash_tag)
-        #         text_without_stopwords.remove(word)
-        # , self.get_name_and_entities(string_ans)
+                string_ans+=self.add_to_dictionary(word,string_ans_index)
+                string_ans_index += len(word)
         return string_ans
     def add_to_dictionary(self,word,index):
-        array_of_words = word.split()
+        array_of_words = word.split()##########################maybe to lower all letters
         ans=""
-        for word in array_of_words:
+        length = range(len(array_of_words))
+        for word,idx in zip(array_of_words,length):
             if word in self.stop_words:
                 continue
             else:
-                self.dictionary[word]=index
-                ans+= word+" "
-        return ans
+                    ans+= word+" "
+        if ans =="":
+            return ""
+        else:
+            return ans
+
     def split_makaf(self,word):
         if word[0].isnumeric() or word[len(word)-1].isnumeric():
             array=[]
@@ -190,7 +158,10 @@ class Parse:
         text_return = []
         range_textdemo = range(len(text_demo))
         text_demo[idx]=text_demo[idx].replace(",","")
-        if not math.isnan(float(text_demo[id_help])):
+        text_demo[id_help]=self.remove_panctuation(text_demo[id_help])
+        if self.isFraction(text_demo[id_help]):
+            return ' '.join(text_demo[id_help])
+        elif not math.isnan(float(text_demo[id_help])):
             number = float(text_demo[id_help])
             number_numerize = nume.numerize(number, 3)
             if id_help + 1 < len(text_demo):
@@ -200,7 +171,7 @@ class Parse:
                     text_return.append(number_to_input)
                     number_to_input = number_to_input + " " + token_next
                     text_return.append(number_to_input)
-                    return text_return
+                    return text_demo[id_help]
                 elif token_next.__eq__("billion"):
                     if 'K' in number_numerize or 'M' in number_numerize:
                         number_to_input = (number_to_input.translate({ord('K'): None}))
@@ -233,11 +204,10 @@ class Parse:
         return ' '.join(text_return)
 
     def is_ascii(self,s):
-        return all(ord(c) < 128 for c in s)
+        return all(ord(c) < 128  for c in s)
 
     def get_long_url(self, url):
         """
-
         :param url: 2 two url . short and long
         :return:  long
         """
@@ -272,6 +242,7 @@ class Parse:
             return word
         if "gmail" in word or "hotmail" in word or "yahoo" in word: return word
         if word[-2:] == "'s" or word[-2:] == "’s" or word[-2:] == "`s": word = word.replace(word[-2:], "")
+        if ":)" == word or ":(" == word or ":-]" == word or ":-)" == word or ";)" == word or ";-)" == word or ":-(" == word or ";(" == word or ";-(" == word: return word
         if "'s" in word: word = word.replace("'s", "")
         if "’s" in word: word = word.replace("’s", "")
         if "`s" in word: word = word.replace("`s", "")
@@ -379,7 +350,7 @@ class Parse:
         if str(url)!="{}" and ( "www" in full_text or "https" in full_text or "http" in full_text):
             full_text= self.switch_long_url_in_short(full_text,url)
         #parse text
-        tokenized_text = self.parse_text(full_text)
+        tokenized_text = self.parse_sentence(full_text)
 
         doc_length = len(tokenized_text)  # after text operations.
         for term in tokenized_text:

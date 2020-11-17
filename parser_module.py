@@ -4,7 +4,6 @@ from document import Document
 from nltk.stem import WordNetLemmatizer,PorterStemmer
 from nltk import pos_tag
 import re
-from numerize import numerize as nume
 import math
 import ast
 
@@ -20,11 +19,18 @@ class Parse:
         :param text:
         :return:
         """
-        #text= "8/3 https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with  percent Alex Cohen-Levi in Tel Aviv"
+        #text= "1045678 Thousand -104567 Million -123456 Thousand 4/7 million https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with  percent Alex Cohen-Levi in Tel Aviv"
         #text = text.replace("…", " ")
-
+        array_text_space = []
         array_text_space = text.split(" ")
         string_ans =""
+        # count = 0
+        # for i in array_text_space:
+        #     curr =i
+        #     if i.isdecimal() or self.isfloat(i) or self.isFraction(i) or i.lstrip('-').isdigit() or self.isfloat(i.lstrip('-')) or self.isFraction(i.lstrip('-')):
+        #         ans = self.convert_str_to_number(array_text_space,count)
+        #         print(ans)
+        #     count+=1
         array_size = range(len(array_text_space))
         string_ans_index=0
         for word,idx in zip(array_text_space,array_size):
@@ -62,10 +68,10 @@ class Parse:
                     ans=self.add_to_dictionary(self.parse_percentage(array_text_space[idx-1]+" "+word),string_ans_index)
                     string_ans+= ans +" "
                     string_ans_index += len(word)+1
-            elif word.isdecimal() or self.isfloat(word) or self.isFraction(word):
-                ans =self.add_to_dictionary(self.convert_str_to_number(array_text_space,idx), string_ans_index)
-                string_ans += ans + " "
-                string_ans_index += len(word)+1
+            elif word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(word.lstrip('-')):
+                    ans =self.add_to_dictionary(self.convert_str_to_number(array_text_space,idx), string_ans_index)
+                    string_ans += ans + " "
+                    string_ans_index += len(word)+1
             else:
                 string_ans+=self.add_to_dictionary(word,string_ans_index)+" "
                 string_ans_index += len(word)+1
@@ -191,30 +197,50 @@ class Parse:
         values = token.split('/')
         return len(values) == 2 and all(i.isdigit() for i in values)
 
+    def convert_str_to_number_try(self, word):
+        tmb = ''
+        if word >= 1000000000 or word <= -1000000000:
+            word =float(word / 1000000000)
+            tmb ='B'
+        elif word >=1000000 or word <= -1000000:
+            word =float(word / 1000000)
+            tmb = 'M'
+        elif word >= 1000 or word <= -1000:
+            word =float(word / 1000)
+            tmb = 'K'
+        ans = '{:.3f}'.format(word) + tmb
+        return ans
+
+
     def convert_str_to_number(self,text_demo, idx):
-        id_help = idx
+        help_minus = ''
         text_return = []
-        range_textdemo = range(len(text_demo))
+        my_word = text_demo[idx]
         text_demo[idx]=text_demo[idx].replace(",","")
-        text_demo[id_help]=self.remove_panctuation(text_demo[id_help])
-        if self.isFraction(text_demo[id_help]):
-            return ' '.join(text_demo[id_help])
-        elif not math.isnan(float(text_demo[id_help])):
-            number = float(text_demo[id_help])
-            number_numerize = nume.numerize(number, 3)
-            if id_help + 1 < len(text_demo):
-                token_next = text_demo[id_help + 1].lower()
-                number_to_input = str(nume.numerize(number, 3))
+        text_demo[idx]=self.remove_panctuation(text_demo[idx])
+        if text_demo[idx].isdecimal() or self.isFraction(text_demo[idx]):
+            help_minus = ''
+        elif text_demo[idx].lstrip('-').isdigit() or self.isfloat(text_demo[idx].lstrip('-')) or self.isFraction( text_demo[idx].lstrip('-')):
+            help_minus = '-'
+            text_demo[idx] = text_demo[idx].replace("-","")
+        if self.isFraction(text_demo[idx]):
+            return ' '.join(help_minus + text_demo[idx])
+        elif not math.isnan(float(text_demo[idx])):
+            number = float(text_demo[idx])
+            number_numerize = self.convert_str_to_number_try(number)
+            if idx + 1 < len(text_demo):
+                token_next = text_demo[idx + 1].lower()
+                number_to_input = str(self.convert_str_to_number_try(number))
                 if self.isFraction(token_next):
                     text_return.append(number_to_input)
                     number_to_input = number_to_input + " " + token_next
                     text_return.append(number_to_input)
-                    return text_demo[id_help]
+                    return help_minus + text_demo[idx]
                 elif token_next.__eq__("billion"):
                     if 'K' in number_numerize or 'M' in number_numerize:
                         number_to_input = (number_to_input.translate({ord('K'): None}))
                         number_to_input = (number_to_input.translate({ord('M'): None}))
-                        text_return.append(text_demo[id_help])
+                        text_return.append(text_demo[idx])
                     else:
                         text_return.append(str(number_numerize + 'B'))
                 elif token_next.__eq__("million"):
@@ -239,7 +265,8 @@ class Parse:
                     text_return.append(number_numerize)
             else:
                 text_return.append(number_numerize)
-        return ' '.join(text_return)
+        return help_minus + ''.join(text_return)
+       # return ' '.join(ans)
 
     def is_ascii(self,s):
         return all(ord(c) < 128 for c in s)

@@ -19,7 +19,7 @@ class Parse:
         :param text:
         :return:
         """
-        #text= "1045678 Thousand -104567 Million -123456 Thousand 4/7 million https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with  percent Alex Cohen-Levi in Tel Aviv"
+        text= "1045678 Thousand -104567 Million -123456 Thousand 4/7 million https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with  percent Alex Cohen-Levi in Tel Aviv"
         #text = text.replace("…", " ")
         array_text_space = []
         array_text_space = text.split(" ")
@@ -37,7 +37,7 @@ class Parse:
             if not self.is_ascii(word) or word=="":
                 continue
             if len(word)>3 and (("www" in word or "https" in word or "http" in word) and "www." != word and word[0]!='@' and word != "https://"):
-                if 'www.' not in word or word == "http" or word == "https":
+                if word == "http" or word == "https":
                     continue
                 if word[0] !='h' or word[0] !='w':
                     continue
@@ -70,6 +70,7 @@ class Parse:
                     string_ans_index += len(word)+1
             elif word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(word.lstrip('-')):
                     ans =self.add_to_dictionary(self.convert_str_to_number(array_text_space,idx), string_ans_index)
+                    array_text_space[idx+1] = ""
                     string_ans += ans + " "
                     string_ans_index += len(word)+1
             else:
@@ -210,7 +211,6 @@ class Parse:
             tmb = 'K'
         ans = '{:.3f}'.format(word) + tmb
         return ans
-
 
     def convert_str_to_number(self,text_demo, idx):
         help_minus = ''

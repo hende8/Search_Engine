@@ -50,17 +50,16 @@ def run_engine():
     documents_list_after_parse=[]
     # Iterate over every document in the file
     start = timeit.default_timer()
-    start = timeit.default_timer()
-
     for document in documents_list:
     # parse the document
         parsed_document = p.parse_doc(document)
         number_of_documents += 1
         #add_to_dictionary_and_letters(parsed_document)
         #documents_list_after_parse.append(parsed_document)
-    stop = timeit.default_timer()
 
+    stop = timeit.default_timer()
     print('Time: ', stop - start)
+
     reorganize_dictionary_with_capital_letters()
     reorganize_documents_with_capital_letters(documents_list_after_parse)
 

@@ -19,23 +19,22 @@ class Parse:
         :param text:
         :return:
         """
-        text= "1045678 Thousand -104567 Million -123456 Thousand 4/7 million https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #footballStadium... in New-York COVID-19 https://walla.com with  percent Alex Cohen-Levi in Tel Aviv"
+        #text= "# bla bal Thousand 4/7 million https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #football_Stadium... in New-York COVID-19 https://walla.com with percent Alex Cohen-Levi in Tel Aviv"
+        #text= "U.S.A"
+        # text= ""
         #text = text.replace("…", " ")
-        array_text_space = []
+        text=text.replace('…', '')
+        text=text.replace("\n"," ")
         array_text_space = text.split(" ")
+        print(array_text_space)
+        # index=0
+        # while index<len(text):
+        #     print(text[index], index)
+        #     index+=1
         string_ans =""
-        # count = 0
-        # for i in array_text_space:
-        #     curr =i
-        #     if i.isdecimal() or self.isfloat(i) or self.isFraction(i) or i.lstrip('-').isdigit() or self.isfloat(i.lstrip('-')) or self.isFraction(i.lstrip('-')):
-        #         ans = self.convert_str_to_number(array_text_space,count)
-        #         print(ans)
-        #     count+=1
         array_size = range(len(array_text_space))
         string_ans_index=0
         for word,idx in zip(array_text_space,array_size):
-            if not self.is_ascii(word) or word=="":
-                continue
             if len(word)>3 and (("www" in word or "https" in word or "http" in word) and "www." != word and word[0]!='@' and word != "https://"):
                 if word == "http" or word == "https" or word == "https:" or word == "https:/"or word == "https://":
                     continue
@@ -44,39 +43,39 @@ class Parse:
                 string_ans_index += len(word)+1
                 continue
             else:
-                if len(word)>1 and word[0] != '#':
+                if len(word)>1 and word[0] != '#' and  self.is_ascii(word):
                     word = self.remove_panctuation(word)
-                elif word == "" or (word[0]=='#' and len(word)==1):
-                    continue
-                if not self.is_ascii(word) or word == "":
+                elif word == "" or (word[0]=='#' and len(word)==1) :
                     continue
             if len(word)>1 and word[0] == '#':
-                ans = self.add_to_dictionary(self.parse_hashtag(word),string_ans_index)
+                temp_word = self.remove_panctuation(word)
+                ans = self.add_to_dictionary(self.parse_hashtag(temp_word),string_ans_index)
                 string_ans+=ans
-                string_ans_index += len(ans)+1
+                string_ans_index += len(word)+1
             elif len(word)==1 and word[0] == '#':
                 continue
             elif len(word)>1 and word[0] == '@':
                 string_ans+=self.add_to_dictionary(word,string_ans_index)
-                string_ans_index += len(word)
+                string_ans_index += len(word)+1
             elif "percent" == word or "Percent" == word or "Percentage" ==word or "percentage" ==word:
                 if(idx>0 and self.isfloat(array_text_space[idx-1])):
                     ans=self.add_to_dictionary(self.parse_percentage(array_text_space[idx-1]+" "+word),string_ans_index)
                     newstr = string_ans[:len(string_ans)-len(word)-1] + string_ans[len(string_ans)+len(word):]
                     string_ans= newstr+ans
-                    string_ans_index += len(newstr)
+                    string_ans_index += len(word)+1
                 else:
                     string_ans += self.add_to_dictionary(word, string_ans_index)
-                    string_ans_index += len(word)
+                    string_ans_index += len(word)+1
             elif word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(word.lstrip('-')):
                 ans =self.add_to_dictionary(self.convert_str_to_number(array_text_space,idx), string_ans_index)
                 string_ans += ans
-                string_ans_index += len(word)
-
+                string_ans_index += len(word)+1
             else:
                 string_ans+=self.add_to_dictionary(word,string_ans_index)
-                string_ans_index += len(word)
-        return string_ans
+                string_ans_index += len(word)+1
+
+        ans =self.get_name_and_entities(string_ans)
+        return string_ans,ans
     def add_to_dictionary(self,word,index):
         array_of_words = word.split()##########################maybe to lower all letters
         ans=""
@@ -86,6 +85,7 @@ class Parse:
                 continue
             else:
                     ans+= word+" "
+                    self.dictionary[word]=index
         if ans =="":
             return ""
         else:
@@ -108,6 +108,7 @@ class Parse:
         original_phrase = phrase
         pattern = re.compile(r"[A-Z][a-z]+|\d+|[A-Z]+(?![a-z])")
         # temp_phrase = list(phrase)
+        print(phrase)
         if phrase[1].islower():
             phrase = phrase[:1] + phrase[1].upper() + phrase[2:]
         # phrase = "".join(temp_phrase)
@@ -121,6 +122,8 @@ class Parse:
         parsing url path
         return an array of the components
         """
+        if "t.co" in string:
+            return ""
         if "www" in string and ("https" in string or "http" in string):
             index = 2
         elif "http" in string and "www" not in string:
@@ -128,6 +131,9 @@ class Parse:
         elif "www" in string and "http" not in string and "https" not in string:
             index = 1
         url_str =re.split(r"[/:\.?=&…]+",string)
+        print(url_str)
+        if len(url_str)<3:
+            return ""
         temp_website_name = url_str[index]+"." + url_str[index+1]
         # url_str[index] = temp_website_name
         ans = temp_website_name+" "
@@ -181,6 +187,7 @@ class Parse:
         help_minus = ''
         text_return = []
         my_word = text_demo[idx]
+        text_demo_length=len(text_demo)
         my_word=my_word.replace(",","")
         my_word=self.remove_panctuation(my_word)
         if my_word.isdecimal() or self.isFraction(my_word):
@@ -188,7 +195,7 @@ class Parse:
         elif my_word.lstrip('-').isdigit() or self.isfloat(my_word.lstrip('-')) or self.isFraction(my_word.lstrip('-')):
             help_minus = '-'
             my_word = my_word.replace("-","")
-        if self.isFraction(my_word):
+        if self.isFraction(my_word) and idx+1<text_demo_length:
             text_return = ''.join(help_minus + my_word)
             if text_demo[idx+1] == "Billion" or text_demo[idx+1] == "billion":
                 text_return += 'B'
@@ -200,7 +207,6 @@ class Parse:
                 text_return += 'K'
                 text_demo[idx + 1] = ""
             return help_minus + ''.join(text_return)
-            #text_demo[idx] = Fraction.f(text_demo[idx])
         if not math.isnan(float(my_word)):
             number = float(my_word)
             number_numerize = self.convert_str_to_number_try(number)
@@ -245,7 +251,7 @@ class Parse:
         return help_minus + ' '.join(text_return)
 
     def is_ascii(self,s):
-        return all(ord(c) < 128  for c in s)
+        return all(ord(c) < 128 or c=='…' or c=='’'   for c in s)
 
     def get_long_url(self, url):
         """
@@ -278,7 +284,7 @@ class Parse:
                 :param word
                 :return: word without panctuation
                 """
-        chars = set('.,:;!()[]{}=+…')
+        chars = set('.,:;!()[]{}?=+…')
         if ("www" in word or "http" in word or "https" in word) or ('@' in word and word[0] != '@' and '.' in word):
             return word
         if "gmail" in word or "hotmail" in word or "yahoo" in word: return word
@@ -300,24 +306,21 @@ class Parse:
         array_text = text.split()
         array_names_and_entities = {}
         idx = 0
+        counter=0
         len_array_text = len(array_text)
         while idx < len_array_text:
+            counter=idx
             current_word = array_text[idx]
             if current_word[0].isupper():
-                entity =array_text[idx]
-                first_index=idx
-                check_stop_word =array_text[idx][0].lower() + array_text[idx][1:]
-                if check_stop_word in self.stop_words and idx+1 <len(array_text) and not array_text[idx+1][0].isupper():
-                    idx+=1
-                    continue
-                first_char_array = array_text[idx+1][0].isupper()
-                while idx+1 < len_array_text and first_char_array:
+                entity =current_word
+                while idx+1 < len_array_text and array_text[idx + 1][0].isupper():
                     entity +=" "+array_text[idx+1]
                     idx+=1
-                if entity in array_names_and_entities.keys():
-                    array_names_and_entities[entity] = array_names_and_entities[entity]
-                else:
-                    array_names_and_entities[entity]=first_index
+                array_names_and_entities[entity]=counter
+                # if not array_names_and_entities[entity]:
+                #     array_names_and_entities[entity] = idx
+                # else:
+                #     array_names_and_entities[entity]=str(array_names_and_entities[entity] +","+ idx)
                 idx += 1
             else:
                 idx+=1
@@ -385,23 +388,36 @@ class Parse:
         quote_url = doc_as_list[9]
         quote_indices = doc_as_list[10]
         term_dict = {}
-        doc_length = len(full_text.split(" "))
-
-        #and tweet_id=="1280919843924070402"
-        if str(url)!="{}" and ( "www" in full_text or "https" in full_text or "http" in full_text):
-            full_text= self.switch_long_url_in_short(full_text,url)
+        array_url_parsed = []
+        if str(url)!="{}":
+            dict2 = eval(url)
+            values = dict2.values()
+            keys = dict2.keys()
+            for key in keys:
+                if dict2[key] != str("null") and  "t.co" not in dict2[key]:
+                    url_parsed = self.parse_url(dict2[key])
+                    array_url_parsed.append(url_parsed)
         #parse text
-        tokenized_text = self.parse_sentence(full_text)
-
+        tokenized_text,entities_and_names = self.parse_sentence(full_text)
         doc_length = len(tokenized_text)  # after text operations.
-        for term in tokenized_text:
+        array_=tokenized_text.split()
+        for term in array_:
             if term not in term_dict.keys():
                 term_dict[term] = 1
             else:
                 term_dict[term] += 1
-        # for term in names_and_entities:
-        #     if term not in term_dict.keys():
-        #         term_dict[term] = 1
+
+        for term in entities_and_names:
+            if term not in term_dict.keys():
+                term_dict[term] = 1
+            else:
+                term_dict[term] += 1
+        for term in array_url_parsed:
+            if term not in term_dict.keys():
+                term_dict[term] = 1
+            else:
+                term_dict[term] += 1
+
 
         document = Document(tweet_id, tweet_date, full_text, url, retweet_text, retweet_url, quote_text,
                             quote_url, term_dict, doc_length)

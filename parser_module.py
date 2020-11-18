@@ -19,14 +19,13 @@ class Parse:
         :param text:
         :return:
         """
-        #text= "# bla bal Thousand 4/7 million https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #football_Stadium... in New-York COVID-19 https://walla.com with percent Alex Cohen-Levi in Tel Aviv"
+        text= "# bla bal Thousand 4/7 million https://walla.com/hen-debi/evning.php THE DOLLAR’s computer’s People… @go Hen’s #football_Stadium... in New-York COVID-19 https://walla.com with percent Alex Cohen-Levi in Tel Aviv"
         #text= "U.S.A"
-        # text= ""
+        #text= "#..."
         #text = text.replace("…", " ")
         text=text.replace('…', '')
         text=text.replace("\n"," ")
         array_text_space = text.split(" ")
-        print(array_text_space)
         # index=0
         # while index<len(text):
         #     print(text[index], index)
@@ -36,7 +35,7 @@ class Parse:
         string_ans_index=0
         for word,idx in zip(array_text_space,array_size):
             if len(word)>3 and (("www" in word or "https" in word or "http" in word) and "www." != word and word[0]!='@' and word != "https://"):
-                if word == "http" or word == "https" or word == "https:" or word == "https:/"or word == "https://":
+                if word == "http" or word == "https" or word == "https:" or word == "https:/" or word == "https://":
                     continue
                 ans = self.add_to_dictionary(self.parse_url(word),string_ans_index)
                 string_ans+=ans
@@ -49,6 +48,8 @@ class Parse:
                     continue
             if len(word)>1 and word[0] == '#':
                 temp_word = self.remove_panctuation(word)
+                if temp_word=="" or temp_word=="#"  :
+                    continue
                 ans = self.add_to_dictionary(self.parse_hashtag(temp_word),string_ans_index)
                 string_ans+=ans
                 string_ans_index += len(word)+1
@@ -108,7 +109,7 @@ class Parse:
         original_phrase = phrase
         pattern = re.compile(r"[A-Z][a-z]+|\d+|[A-Z]+(?![a-z])")
         # temp_phrase = list(phrase)
-        print(phrase)
+        # print(phrase)
         if phrase[1].islower():
             phrase = phrase[:1] + phrase[1].upper() + phrase[2:]
         # phrase = "".join(temp_phrase)
@@ -122,35 +123,17 @@ class Parse:
         parsing url path
         return an array of the components
         """
-        if "t.co" in string:
-            return ""
-        if "www" in string and ("https" in string or "http" in string):
-            index = 2
-        elif "http" in string and "www" not in string:
-            index = 1
-        elif "www" in string and "http" not in string and "https" not in string:
-            index = 1
-        url_str =re.split(r"[/:\.?=&…]+",string)
-        print(url_str)
-        if len(url_str)<3:
-            return ""
-        temp_website_name = url_str[index]+"." + url_str[index+1]
-        # url_str[index] = temp_website_name
-        ans = temp_website_name+" "
-        # del url_str[index+1:index+2]
-        index_while=index+2
-        while index_while < len(url_str):
-            if "-" in url_str[index_while]:
-                temp=re.split("-",url_str[index_while])
-                range_temp = range(len(temp))
-                for term_temp,idx_within in zip(temp,range_temp):
-                    # url_str.insert(index_while, term_temp)
-                    ans += temp[idx_within] + " "
-                index_while+=1
-            else:
-                ans += url_str[index_while] + " "
-                index_while+=1
-        return ans
+        splited_values = ""
+        if string is not None:
+            r=re.split('[/://?=]',string)
+            for word in r:
+                if "-" in word:
+                    word = re.split('-',word)
+                    splited_values +=" ".join(word)+" "
+                else:
+                    splited_values +=word+" "
+            return splited_values[0:len(splited_values)-1]
+
 
     def isfloat(self, value):
         """
@@ -195,7 +178,9 @@ class Parse:
         elif my_word.lstrip('-').isdigit() or self.isfloat(my_word.lstrip('-')) or self.isFraction(my_word.lstrip('-')):
             help_minus = '-'
             my_word = my_word.replace("-","")
-        if self.isFraction(my_word) and idx+1<text_demo_length:
+        if self.isFraction(my_word):
+            if idx + 1 == text_demo_length:
+                return ''.join(help_minus + my_word)
             text_return = ''.join(help_minus + my_word)
             if text_demo[idx+1] == "Billion" or text_demo[idx+1] == "billion":
                 text_return += 'B'
@@ -285,6 +270,8 @@ class Parse:
                 :return: word without panctuation
                 """
         chars = set('.,:;!()[]{}?=+…')
+        if "#" == word:
+            return ""
         if ("www" in word or "http" in word or "https" in word) or ('@' in word and word[0] != '@' and '.' in word):
             return word
         if "gmail" in word or "hotmail" in word or "yahoo" in word: return word
@@ -293,8 +280,6 @@ class Parse:
         if "'s" in word: word = word.replace("'s", "")
         if "’s" in word: word = word.replace("’s", "")
         if "`s" in word: word = word.replace("`s", "")
-        if "#" == word:
-            return word.replace("#", "")
         if '#' in word and word[0] != '#': word = word.replace("#", "")
         if '@' in word and word[0] != '@': word = word.replace("@", "")
         for char in word:
@@ -389,7 +374,8 @@ class Parse:
         quote_indices = doc_as_list[10]
         term_dict = {}
         array_url_parsed = []
-        if str(url)!="{}":
+        url=str(url)
+        if url!="{}" and "null" not in url :
             dict2 = eval(url)
             values = dict2.values()
             keys = dict2.keys()

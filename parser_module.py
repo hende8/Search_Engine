@@ -23,7 +23,7 @@ class Parse:
         :param text:
         :return:
         """
-        text ="https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
+        #text ="https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
         self.array_names_and_entities={}
         array_text_space = text.split(" ")
         # print(text)
@@ -137,14 +137,15 @@ class Parse:
         if string is not None:
             r = re.split('[/://?=-]', string)
             ans = " ".join(r).lstrip()
+            ans = re.sub(r'http\S+|www.\S+','',ans) ## not work well
             array_url= ans.split()
+            string_without_stopword =""
             length= range(len(array_url))
             for word,idx in zip(array_url,length):
-                if "www" in word and "http" not in word and "https" not in word:
-                    temp_website_name = array_url[1] + "." + array_url[2]
-                    array_url[idx]=temp_website_name
-                    break
-            return ans
+               if word in self.stop_words or word.isnumeric():
+                   continue
+               string_without_stopword+=word+" "
+            return string_without_stopword
 
     def isfloat(self, value):
         """
@@ -398,7 +399,7 @@ class Parse:
             values = dict2.values()
             keys = dict2.keys()
             for key in keys:
-                if dict2[key] != str("null") and  "t.co" not in dict2[key]:
+                if dict2[key] != str("null") and  't.co' not in dict2[key]:
                     url_parsed = self.parse_url(dict2[key])
                     check= url_parsed.split()
                     for word in check:

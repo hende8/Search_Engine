@@ -6,6 +6,7 @@ from searcher import Searcher
 import utils
 import timeit
 
+
 # dictionary that check if big letter show twice
 dictionary_phrase_and_letters = {}
 def add_to_dictionary_and_letters(parsed_document):
@@ -46,26 +47,33 @@ def run_engine():
     indexer = Indexer(config)
 
     # documents_list = r.read_file(file_name='sample3.parquet')
-    documents_list = r.read_all_files()
+    documents_list = r.read_file(file_name='sample3.parquet')
     documents_list_after_parse=[]
     # Iterate over every document in the file
     start = timeit.default_timer()
+    idx=0
     for document in documents_list:
+        idx+=1
     # parse the document
+        if idx>100:
+            break
         parsed_document = p.parse_doc(document)
         number_of_documents += 1
-        #add_to_dictionary_and_letters(parsed_document)
+        documents_list_after_parse.append(parsed_document)
+        # add_to_dictionary_and_letters(parsed_document)
         #documents_list_after_parse.append(parsed_document)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)
 
-    reorganize_dictionary_with_capital_letters()
-    reorganize_documents_with_capital_letters(documents_list_after_parse)
+    #reorganize_dictionary_with_capital_letters()
+    #reorganize_documents_with_capital_letters(documents_list_after_parse)
 
     # index the document data
     for doc in documents_list_after_parse:
         indexer.add_new_doc(doc)
+    indexer.sort_dictionary_by_key()
+    print(indexer.inverted_idx)
     print('Finished parsing and indexing. Starting to export files')
 
     utils.save_obj(indexer.inverted_idx, "inverted_idx")
@@ -94,3 +102,4 @@ def main():
     inverted_index = load_index()
     for doc_tuple in search_and_rank_query(query, inverted_index, k):
         print('tweet id: {}, score (unique common words with query): {}'.format(doc_tuple[0], doc_tuple[1]))
+# def main(corpus_path,output_path,stemming,queries,num_docs_to_retrieve):

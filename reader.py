@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import glob
 
 
 class ReadFile:
@@ -25,12 +26,13 @@ class ReadFile:
         # "{:,} files, {:,} folders".format(files, folders)
 
 
-
-        full_path = os.path.join(self.corpus_path, file_name)
-
-        df = pd.read_parquet(full_path, engine="pyarrow")
-        list = df.values.tolist()
-        return list
+        files = glob.glob('./Data - Copy/**/*.parquet')
+        df=pd.concat([pd.read_parquet(fp) for fp in files])
+        # full_path = os.path.join(self.corpus_path, file_name)
+        #
+        # df = pd.read_parquet(full_path, engine="pyarrow")
+        # list = df.values.tolist()
+        return df.values.tolist()
 
     def read_all_files(self):
         temp_folder_path=self.corpus_path
@@ -47,4 +49,3 @@ class ReadFile:
             else:
                 continue
         return self.all_documents
-

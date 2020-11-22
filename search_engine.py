@@ -47,7 +47,7 @@ def run_engine():
     indexer = Indexer(config)
 
     # documents_list = r.read_file(file_name='sample3.parquet')
-    documents_list = r.read_file(file_name='sample3.parquet')
+    documents_list = r.read_file()
     documents_list_after_parse=[]
     # Iterate over every document in the file
     start = timeit.default_timer()
@@ -55,8 +55,8 @@ def run_engine():
     for document in documents_list:
         idx+=1
     # parse the document
-        if idx>100:
-            break
+       # if idx>100:
+        #    break
         parsed_document = p.parse_doc(document)
         number_of_documents += 1
         documents_list_after_parse.append(parsed_document)

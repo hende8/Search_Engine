@@ -23,7 +23,6 @@ class Parse:
         :param text:
         :return:
         """
-        #text ="https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
         self.array_names_and_entities={}
         array_text_space = text.split(" ")
         # print(text)
@@ -32,7 +31,8 @@ class Parse:
         string_ans_index = 0
         for word, idx in zip(array_text_space, array_size):
             if self.is_url(word):
-                if "t.co" in word:continue
+                if 't.co' in word:
+                    continue
                 ans = self.add_to_dictionary(self.parse_url(word), string_ans_index)
                 string_ans += ans
                 string_ans_index += len(word) + 1
@@ -41,6 +41,8 @@ class Parse:
                 if len(word)>1 and word[0] != '#' and  self.is_ascii(word) and not self.isfloat(word):
                     word = self.remove_panctuation(word)
                 elif word == "" or (len(word)==1 and word[0]=='#') :
+                    continue
+                elif len(word)==1:
                     continue
             if len(word)>1 and word[0] == '#':
                 temp_word = self.remove_panctuation(word)
@@ -332,47 +334,6 @@ class Parse:
         matches = rx2.findall(text)
         tokinzed_entity_new = [e for e in matches if len(e.split()) > 1]
         return tokinzed_entity_new
-
-    # def get_name_and_entities_new(self, array_text):
-    #     counter = 0
-    #     len_array_text = len(array_text)
-    #     part_of_entity=False
-    #     idx=0
-    #     change=False
-    #     current_word=array_text[idx]
-    #     while idx < len_array_text :
-    #         counter = idx
-    #         current_word = array_text[idx]
-    #         if len(current_word)>1 and current_word[0].isupper():
-    #             entity=self.remove_panctuation(current_word)
-    #             while idx + 1 < len_array_text and array_text[idx + 1][0].isupper():
-    #                 part_of_entity=True
-    #                 array = self.remove_panctuation(array_text[idx + 1]).split()
-    #                 if len(array)>1 and array[1][0].isupper():
-    #                     entity += " " + array[0]
-    #                     array_text[idx+1]=array[1]
-    #                     idx+=1
-    #                     change = True
-    #                     break
-    #                 entity += " " + array[0]
-    #                 idx += 1
-    #             if not part_of_entity:
-    #                 if entity.lower() in self.stop_words:
-    #                     idx += 1
-    #                     continue
-    #                 else:
-    #                     self.array_names_and_entities[entity] = counter
-    #                     idx += 1
-    #             else:
-    #                 self.array_names_and_entities[entity] = counter
-    #                 if change :
-    #                     change=False
-    #                 else:
-    #                      idx += 1
-    #             part_of_entity=False
-    #         else:
-    #             idx += 1
-    #     return self.array_names_and_entities
 
     def parse_doc(self, doc_as_list):
         """

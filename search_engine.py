@@ -60,22 +60,47 @@ def run_engine():
         parsed_document = p.parse_doc(document)
         number_of_documents += 1
         documents_list_after_parse.append(parsed_document)
-        # add_to_dictionary_and_letters(parsed_document)
-        #documents_list_after_parse.append(parsed_document)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)
 
-    #reorganize_dictionary_with_capital_letters()
-    #reorganize_documents_with_capital_letters(documents_list_after_parse)
 
     # index the document data
-    for doc in documents_list_after_parse:
-        indexer.add_new_doc(doc)
-    indexer.sort_dictionary_by_key()
-    print(indexer.inverted_idx)
-    print('Finished parsing and indexing. Starting to export files')
+    dic_index=0
+    len_parsed_documents = len(documents_list_after_parse)
 
+    sub_dic_idx=0
+    index = 0
+    limit = int(idx/10)
+    limit_extra = idx -limit*10
+    while dic_index<10:
+        while sub_dic_idx< limit and index<len_parsed_documents:
+            indexer.add_new_doc(documents_list_after_parse[index])
+            sub_dic_idx+=1
+            index+=1
+            if dic_index==9:
+                limit = limit +limit_extra
+        indexer.sort_dictionary_by_key(indexer.inverted_idx)
+        indexer.posting_file.sort_posting_file()
+        indexer.write_to_disk(indexer.sub_dic_posting_file_idx)
+        indexer.new_sub_dict()
+        dic_index+=1
+        sub_dic_idx=0
+
+    indexer.merge_all_posting_and_inverted_idx()
+
+
+    first = str(indexer.sub_dic_posting_file_idx-2)
+    second= str (indexer.sub_dic_posting_file_idx-1)
+    indexer.merge_sub_dic_inverted_index(first,second)
+    print('Finished parsing and indexing. Starting to export files')
+    file_name = first+','+ second
+    indexer.write_to_disk(file_name)
+
+    indexer.sort_posting_file_by_abc()
+
+    # indexer.posting_file.open_posting_file()
+    # indexer.open_sub_dic_inverted_index(indexer.sub_dic_posting_file_idx)
     utils.save_obj(indexer.inverted_idx, "inverted_idx")
     utils.save_obj(indexer.postingDict, "posting")
 

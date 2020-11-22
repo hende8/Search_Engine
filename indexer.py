@@ -30,7 +30,7 @@ class Indexer:
         for term in document_dictionary.keys():
             keys = self.inverted_idx.keys()
             try:
-                if term =="#telanganacovidtruth":
+                if term =="3.63M":
                     print("")
                 if term[0].isupper():
                     term_upper = term.upper()
@@ -56,9 +56,11 @@ class Indexer:
                     term_upper= term.upper()
                     # in case of word that already exists in dictionary
                     if term_upper  in keys and not term_upper.isnumeric() :
+                        temp_freq = self.inverted_idx[term_upper]['frequency_show_term']
+                        temp_pointer = self.inverted_idx[term_upper]['posting_pointer']
                         self.inverted_idx[term] = {}
-                        self.inverted_idx[term]['frequency_show_term'] = self.inverted_idx[term_upper]['frequency_show_term'] + 1
-                        new_pointer = self.posting_file.add_term_to_posting_file(document.tweet_id,document_dictionary[term],self.inverted_idx[term_upper]['posting_pointer'])
+                        self.inverted_idx[term]['frequency_show_term'] = temp_freq + 1
+                        new_pointer = self.posting_file.add_term_to_posting_file(document.tweet_id,document_dictionary[term],temp_pointer)
                         self.inverted_idx[term]['posting_pointer']=new_pointer
                         del self.inverted_idx[term_upper]  ## consume a lot of resource - check it
                     # in case of new term in dictionary
@@ -175,8 +177,13 @@ class Indexer:
                     files.append(file)
                     counter+=1
             max_size = int(max(files))+1
+            even =True
+            if len(files) %2==1:
+                even=False
             if len(files) >1:
                 for i in range(0,len(files),2):
+                    if i+1 == len(files) and not even:
+                        continue
                     posting_file_aim,dic_idx_aim = self.merge_sub_dic_inverted_index(files[i],files[i+1])
                     os.remove(path+"\\posting_file_"+files[i]+".json")
                     os.remove(path+"\\inverted_dic_file_"+files[i]+".json")
@@ -184,6 +191,7 @@ class Indexer:
                     os.remove(path+"\\inverted_dic_file_"+files[i+1]+".json")
                     self.write_to_disk(max_size,posting_file=posting_file_aim,inverted_idx=dic_idx_aim)
                     max_size+=1
+                files = []
             else:
                 has_files_to_merge=False
 

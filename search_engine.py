@@ -54,9 +54,8 @@ def run_engine():
     idx=0
     for document in documents_list:
         idx+=1
-    # parse the document
-       # if idx>100:
-        #    break
+        if idx>100:
+           break
         parsed_document = p.parse_doc(document)
         number_of_documents += 1
         documents_list_after_parse.append(parsed_document)

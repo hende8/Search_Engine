@@ -11,8 +11,6 @@ class PostingFile:
         else:
             self.posting_file_dictionary = {}
     def add_term_to_posting_file(self,tweet_id,freq_in_tweet,posting_id=None):
-        if posting_id==None:
-            print("")
         new_posting_node = PostingNode(tweet_id,freq_in_tweet)
         new_posting_id = new_posting_node.posting_id
         keys = self.posting_file_dictionary.keys()

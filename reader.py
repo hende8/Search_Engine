@@ -25,9 +25,9 @@ class ReadFile:
         # print
         # "{:,} files, {:,} folders".format(files, folders)
 
-        files = glob.glob("E:\\Program Files\\לימודים\\שנה ד'\\אחזור\\*\\Data - Copy\\**\\*.parquet")
-        #print(files)
-        df = pd.concat([pd.read_parquet(fp) for fp in files])
+
+        files = glob.glob('./Data - Copy/**/*.parquet')
+        df=pd.concat([pd.read_parquet(fp) for fp in files])
         # full_path = os.path.join(self.corpus_path, file_name)
         #
         # df = pd.read_parquet(full_path, engine="pyarrow")

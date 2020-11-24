@@ -1,5 +1,8 @@
 
 class PostingNode:
+    '''
+    posting node consist a details of the tweet id ,frequency in documents
+    '''
     index=0
     def __init__(self,tweet_id,frequency_show_in_document,posting_id=''):
         self.tweet_id=str(tweet_id)

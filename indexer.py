@@ -8,10 +8,15 @@ import os
 class Indexer:
 
     def __init__(self, config):
+        '''
+
+        :param config: configuration file
+        '''
         self.inverted_idx = {}
         self.config = config
         self.posting_file = PostingFile()
         self.sub_dic_posting_file_idx=0
+        self.dic_max_tf_and_uniqueness ={}
     def new_sub_dict(self):
         self.inverted_idx={}
         self.posting_file=PostingFile()
@@ -26,12 +31,14 @@ class Indexer:
         """
 
         document_dictionary = document.term_doc_dictionary
+        max_tf=0
         # Go over each term in the doc
         for term in document_dictionary.keys():
+            tf = document_dictionary[term]
+            if tf>max_tf:
+                max_tf= tf
             keys = self.inverted_idx.keys()
             try:
-                if term =="3.63M":
-                    print("")
                 if term[0].isupper():
                     term_upper = term.upper()
                     term_lower=term_upper.lower()
@@ -82,10 +89,71 @@ class Indexer:
                 print(document.term_doc_dictionary)
                 print('problem with the following key {}'.format(term[0]))
                 print("#####################################")
+        self.dic_max_tf_and_uniqueness[str(document.tweet_id)]={}
+        self.dic_max_tf_and_uniqueness[str(document.tweet_id)]['max_tf']=max_tf
+        self.dic_max_tf_and_uniqueness[str(document.tweet_id)]['uniqueness_words']=len(document_dictionary)
+    def write_to_disk_dic_max_tf_and_uniqueness(self):
+        '''
+        write dictionary max tf and number of uniqueness word in document
+        :return:
+        '''
+        j = json.dumps(self.dic_max_tf_and_uniqueness)
+        with open('dic_max_tf_and_uniqueness.json','w') as f:
+            f.write(j)
+            f.close()
+    def open_dic_max_tf_and_uniqueness(self):
+        '''
+        get max_tf and uniqueness dictionary from json to dictionary
+        :return:
+        '''
+        with open('dic_max_tf_and_uniqueness.json') as json_file:
+            data = json.load(json_file)
+            return data
+    def divide_dictionary(self, documents_list_after_parse,idx=None):
+        '''
+        divide the dictionary to multiple smaller dictionaries
+        :param documents_list_after_parse: dictionary
+        :param idx:
+        :return:
+        '''
+        if idx is None:
+            idx= len(documents_list_after_parse)
+        dic_index=0
+        sub_dic_idx = 0
+        index = 0
+        limit = int(idx / 10)
+        limit_extra = idx - limit * 10
+        len_parsed_documents = len(documents_list_after_parse)
+        while dic_index < 10:
+            while sub_dic_idx < limit and index < len_parsed_documents:
+                self.add_new_doc(documents_list_after_parse[index])
+                sub_dic_idx += 1
+                index += 1
+                if dic_index == 9:
+                    limit = limit + limit_extra
+            self.sort_dictionary_by_key(self.inverted_idx)
+            self.posting_file.sort_posting_file()
+            self.write_to_disk(self.sub_dic_posting_file_idx)
+            self.new_sub_dict()
+            dic_index += 1
+            sub_dic_idx = 0
+        self.write_to_disk_dic_max_tf_and_uniqueness()
+        # ans = self.open_dic_max_tf_and_uniqueness()
     def sort_dictionary_by_key(self,dictionary):
+        '''
+        sort dictionary by key
+        :param dictionary: dictionary to sort
+        :return: sorted dictionary
+        '''
         self.inverted_idx= OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
         return self.inverted_idx
     def write_to_disk(self,idx, posting_file=None,inverted_idx=None):
+        '''
+        write posting file and inverted index to disk
+        :param idx: offset of the dictionary
+        :param posting_file:
+        :param inverted_idx:
+        '''
         if inverted_idx is not None:
             j=json.dumps(inverted_idx)
         else:
@@ -102,18 +170,31 @@ class Indexer:
         with open('posting_file_'+str(idx)+'.json','w') as f:
             f.write(j)
             f.close()
-
     def write_posting_file_to_disk(self,idx):
+        '''
+        write posting file to disk
+        :param idx: offset of the posting file
+        '''
         j =json.dumps(self.posting_file.posting_file_to_json())
         with open('posting_file_'+str(idx)+'.json','w') as f:
             f.write(j)
             f.close()
-
     def open_sub_dic_inverted_index(self,idx):
+        '''
+        open sub dictionary of inverted dictionary
+        :param idx: offset of the sub dictionary
+        :return:
+        '''
         with open('inverted_dic_file_'+str(idx)+'.json') as json_file:
             data = json.load(json_file)
             return data
     def merge_sub_dic_inverted_index(self,idx_origin,idx_aim):
+        '''
+        merge sub dic inverted index and posting file
+        :param idx_origin: offset of origin dictionary
+        :param idx_aim: offset of aim dictionary
+        :return:
+        '''
         dic_idx_origin = self.open_sub_dic_inverted_index(idx_origin)
         posting_file_origin = self.posting_file.open_posting_file(idx_origin)
         dic_idx_aim = self.open_sub_dic_inverted_index(idx_aim)
@@ -142,6 +223,9 @@ class Indexer:
         self.posting_file.posting_file_dictionary=posting_file_aim
         return PostingFile(posting_file_aim),dic_idx_aim
     def sort_posting_file_by_abc(self):
+        '''
+        split the posting file to a'b'c
+        '''
         items_inverted_idx = self.inverted_idx.items()
         sorted_posting_file_hashtag={}
         a_k=['a','b','c','d','e','f','g','h','i','j','k']
@@ -164,7 +248,10 @@ class Indexer:
         self.posting_file.posting_file_dictionary= sorted_posting_file_l_z
         self.write_posting_file_to_disk("l_z")
     def merge_all_posting_and_inverted_idx(self):
-        path = "C:\\Users\\HEN\\PycharmProjects\\Search_Engine_Project"
+        '''
+        build the posting file and the inverted index step by step like a tournament
+        '''
+        path =  "C:\\Users\\HEN\\PycharmProjects\\Search_Engine_Project"
         files = []
         has_files_to_merge = True
         counter=0
@@ -194,6 +281,8 @@ class Indexer:
                 files = []
             else:
                 has_files_to_merge=False
+
+
 
 
 

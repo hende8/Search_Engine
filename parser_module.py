@@ -34,7 +34,7 @@ class Parse:
         text = text.replace("\n", ". ")
         text = self.ignore_emojis(text)
         array_text_space = text.split(" ")
-        array_text_space = self.seperate_words_with_dots(array_text_space)
+        array_text_space = self.separate_words_with_dots(array_text_space)
         string_ans = ""
         array_size = range(len(array_text_space))
         string_ans_index = 0
@@ -407,6 +407,8 @@ class Parse:
                         array_url_parsed.append(word)
         tokenized_text,names_and_entities = self.parse_sentence(full_text, stemmer=False)
         doc_length = len(tokenized_text)  # after text operations.
+        if doc_length==0:
+            return None
         for term in tokenized_text:
             if term not in term_dict.keys():
                 term_dict[term] = 1

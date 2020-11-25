@@ -1,4 +1,3 @@
-import tf_idf
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 from document import Document
@@ -7,6 +6,8 @@ import indexer
 import math
 import copy
 import pandas as pd
+
+from posting_file import PostingFile
 
 
 class Ranker:
@@ -116,7 +117,8 @@ class Ranker:
             else:
                 posting_file_col=posting_file.open_posting_file(idx='hash')
                 hash_bool=True
-            temp_tweet_id_list_col = posting_file_col[temp_dic[column]['posting_pointer']]
+            temp_check = temp_dic[column]['posting_pointer']
+            temp_tweet_id_list_col = posting_file_col[temp_check]
             for row in columns:
                 letter_lower = row[0].lower()
                 if letter_lower in a_k:
@@ -155,7 +157,7 @@ class Ranker:
         print(df)
 
     def calculate_frequency_and_normalize(self,c_i_j,c_i_i,c_j_j):
-        down = (c_i_i*c_i_i)+(c_j_j*c_j_j)-c_i_j
+        down = (c_i_i)+(c_j_j)-c_i_j
         return c_i_j/down
 
 

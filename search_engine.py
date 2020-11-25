@@ -23,29 +23,42 @@ def run_engine():
     # documents_list = r.read_file(file_name='sample3.parquet')
     pathes = r.get_all_path_of_parquet()
     idx=0
+    index_inner=0
     documents_list_after_parse=[]
     length_of_array = len(pathes)
+    check=0
     for i in range(0,length_of_array):
         start = timeit.default_timer()
+        i=index_inner
         if i==4:
             break
         if i==length_of_array-1:
             documents_list = r.get_documents(pathes[i][0], pathes[i][1])
             print(pathes[i][1])
+            index_inner+=1
         else:
             documents_list = r.get_documents(pathes[i][0],pathes[i][0])
             print(pathes[i][1])
+            # break
             documents_list.extend(r.get_documents(pathes[i+1][0],pathes[i+1][0]))
             print(pathes[i+1][1])
-            i+=2
+            index_inner+=2
         for document in documents_list:
             parsed_document = p.parse_doc(document)
+            check+=1
+            if parsed_document ==None:
+                continue
+            if check>40:
+                check=0
+                break
             number_of_documents += 1
             documents_list_after_parse.append(parsed_document)
         stop = timeit.default_timer()
         print('Time in minutes: ', (stop - start) / 60, "round number :",i,i+1)
         for doc in documents_list_after_parse:
+            number_of_documents+=1
             indexer.add_new_doc(doc)
+        documents_list_after_parse = []
         print("start sort_dictionary_by_key...")
         indexer.sort_dictionary_by_key(indexer.inverted_idx)
         print("start sort_posting_file...")
@@ -53,13 +66,13 @@ def run_engine():
         print("start write_to_disk...")
         indexer.write_to_disk(indexer.sub_dic_posting_file_idx)
         print("**************** move to next sub dictionary :", idx)
+        indexer.new_sub_dict()
     print("start merging sub dictionaries...")
-    inverted_idx = indexer.merge_all_posting_and_inverted_idx()
+    inverted_idx,max_index_dic = indexer.merge_all_posting_and_inverted_idx()
     print("start sort_posting_file_by_abc...")
     indexer.sort_posting_file_by_abc()
     print("number of documents :", indexer.number_of_documents)
-
-
+    indexer.add_idf_to_dictionary(number_of_documents,max_index_dic)
 
     # documents_list = r.read_file('covid19_07-11.snappy.parquet')
 
@@ -86,7 +99,7 @@ def run_engine():
     # index the document data
     # dic_index=0
     # len_parsed_documents = len(documents_list_after_parse)
-    indexer.divide_dictionary(documents_list_after_parse,idx)
+    #indexer.divide_dictionary(documents_list_after_parse,idx)
     # sub_dic_idx=0
     # index = 0
     # limit = int(idx/10)
@@ -215,8 +228,10 @@ def load_index():
 
 def search_and_rank_query(query, inverted_index, k):
     p = Parse()
+
     query_as_list = p.parse_sentence(query)
     searcher = Searcher(inverted_index)
+    searcher.ranker.global_method_matrix(inverted_index)
     relevant_docs = searcher.relevant_docs_from_posting(query_as_list)
     ranked_docs = searcher.ranker.rank_relevant_doc(relevant_docs)
     return searcher.ranker.retrieve_top_k(ranked_docs, k)

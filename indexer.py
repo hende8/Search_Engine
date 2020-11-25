@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from posting_file import PostingFile
 from posting_node import PostingNode
+import math
 import json
 import re
 import os
@@ -44,8 +45,8 @@ class Indexer:
         # Go over each term in the doc
         for term in document_dictionary.keys():
             tf = document_dictionary[term]/document.doc_length
-            rt = document.rt
-            if tf > max_tf:
+            tf_in_term = document_dictionary[term]
+            if tf_in_term > max_tf:
                 max_tf = tf
             keys = self.inverted_idx.keys()
             try:
@@ -103,15 +104,17 @@ class Indexer:
                                                                    self.inverted_idx[term]['posting_pointer'])
 
             except:
-                print(term)
-                print(document.tweet_id)
-                print(document.term_doc_dictionary)
                 print('problem with the following key {}'.format(term[0]))
-                print("#####################################")
         self.dic_max_tf_and_uniqueness[str(document.tweet_id)] = {}
         self.dic_max_tf_and_uniqueness[str(document.tweet_id)]['max_tf'] = max_tf
         self.dic_max_tf_and_uniqueness[str(document.tweet_id)]['uniqueness_words'] = len(document_dictionary)
         self.dic_max_tf_and_uniqueness[str(document.tweet_id)]['rt'] = str(document.rt)
+    def add_idf_to_dictionary(self,number_of_document,idx):
+        keys = self.inverted_idx.keys()
+        for key in keys:
+            self.inverted_idx[key]['idf'] = math.log10(number_of_document/self.inverted_idx[key]['frequency_show_term'])
+        os.remove(os.path.dirname(os.path.abspath(__file__)) + "\\inverted_dic_file_" + str(idx) + ".json")
+        self.write_inverted_index_to_disk(idx,self.inverted_idx)
 
     def write_to_disk_dic_max_tf_and_uniqueness(self):
         '''
@@ -203,6 +206,11 @@ class Indexer:
         '''
         j = json.dumps(self.posting_file.posting_file_to_json())
         with open('posting_file_' + str(idx) + '.json', 'w') as f:
+            f.write(j)
+            f.close()
+    def write_inverted_index_to_disk(self,idx,inverted_index):
+        j =json.dumps(inverted_index)
+        with open('inverted_dic_file_'+str(idx)+'.json','w') as f:
             f.write(j)
             f.close()
 
@@ -315,8 +323,8 @@ class Indexer:
                 has_files_to_merge=False
         if is_merge:
             self.inverted_idx=dic_idx_aim
-            return dic_idx_aim
-        return self.inverted_idx
+            return dic_idx_aim,max_size-1
+        return self.inverted_idx,max_size-1
 
 
 

@@ -17,6 +17,7 @@ class Indexer:
         self.posting_file = PostingFile()
         self.sub_dic_posting_file_idx=0
         self.dic_max_tf_and_uniqueness ={}
+        self.number_of_documents=0
     def new_sub_dict(self):
         self.inverted_idx={}
         self.posting_file=PostingFile()
@@ -29,7 +30,7 @@ class Indexer:
         :param document: a document need to be indexed.
         :return: -
         """
-
+        self.number_of_documents+=1
         document_dictionary = document.term_doc_dictionary
         max_tf=0
         # Go over each term in the doc
@@ -109,6 +110,10 @@ class Indexer:
         with open('dic_max_tf_and_uniqueness.json') as json_file:
             data = json.load(json_file)
             return data
+    def write_new_dictionary_to_disk(self):
+        self.sort_dictionary_by_key(self.inverted_idx)
+        self.posting_file.sort_posting_file()
+        self.write_to_disk(self.sub_dic_posting_file_idx)
     def divide_dictionary(self, documents_list_after_parse,idx=None):
         '''
         divide the dictionary to multiple smaller dictionaries
@@ -254,8 +259,10 @@ class Indexer:
         path =  "C:\\Users\\HEN\\PycharmProjects\\Search_Engine_Project"
         files = []
         has_files_to_merge = True
+        is_merge = False
         counter=0
         while has_files_to_merge:
+
             files_in_path =os.listdir(path)
             count=0
             for i in files_in_path:
@@ -268,6 +275,7 @@ class Indexer:
             if len(files) %2==1:
                 even=False
             if len(files) >1:
+                is_merge = True
                 for i in range(0,len(files),2):
                     if i+1 == len(files) and not even:
                         continue
@@ -281,6 +289,10 @@ class Indexer:
                 files = []
             else:
                 has_files_to_merge=False
+        if is_merge:
+            self.inverted_idx=dic_idx_aim
+            return dic_idx_aim
+        return self.inverted_idx
 
 
 

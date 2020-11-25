@@ -11,10 +11,7 @@ import ast
 class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
-        self.dictionary = {}
-        self.dictionary_index = {}
-        self.dic_entities = {}
-        self.dic_entities_index = {}
+        self.dictionary_term_index = {}
         self.array_names_and_entities = {}
         self.covid_list = ["corona", "covid", "covid-19", "covid19", "coronavirus", "coronaviruses", "#covid19",
                            "#corona", "#COVIDー19", "#coronaviruses", "#covid", "#covid-19", "#coronavirus"]
@@ -32,6 +29,7 @@ class Parse:
 
         # text = "100⁰ # \ | @ ! $ % ^ & * ( ) ` ~ + = _ \ ' | : ; / ? . , } { ] [ https://  3.63 million say “not at all.” I walked in corona the Corona in Corona  covid-19 streed. COVID-19 and he found 10 million dollar for 6 percent"
         #text = "€£💐🔃🙏🏻❤⬇🐮💗，🎊🎁🎉🎈🍸‘🤦🏻‍♀🕯🙏🏼🔹€4️⃣🐣👍🏼🍰🚨💥🇺🇸🚫✅❗️👇⁦👏⁩“”⚠🇦🇷‼😭😩😪🤬🤡😷😁😳😂😢🤣⑥²⁸¹❶❷❽②⑦&$.,!?,…:;^ Meet walked Donald Trump in Y'all Tom the streed and he found 10 million dollar for 6 percent https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
+        self.dictionary_index = {}
         self.array_names_and_entities = {}
         text = text.replace("\n", ". ")
         text = self.ignore_emojis(text)
@@ -42,14 +40,14 @@ class Parse:
         string_ans_index = 0
         entities_url = []  # help us to replace the url to "" because in get_entities it returns parts of the url
         for word, idx in zip(array_text_space, array_size):
+            if word =="I…":
+                print("")
             ans = ""
-            # print(text)
             if word == '' or word == ' ': continue
             check_digit = self.isdigit(word)
             if (len(word) < 2 and check_digit is False) or self.is_ascii(word) is False:
                 word = self.remove_panctuation(word)
-                if self.is_ascii(word) is False or word == '' or word == " ":
-                    # print(word)
+                if self.is_ascii(word) is False or word == '' or word == " " or word in self.stop_words:
                     continue
             if ans == "" and self.is_url(word):
                 entities_url.append(word)
@@ -77,17 +75,16 @@ class Parse:
                     word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(word.lstrip('-'))):
                 ans = self.convert_str_to_number(array_text_space, idx)
             if ans == "":
-                if word.lower() in self.stop_words: continue
                 ans = self.remove_panctuation(word)
-            #ans = word
+                if word.lower() in self.stop_words: continue
             string_ans += self.add_to_dictionary(ans, string_ans_index)
             string_ans_index += len(word) + 1
 
-        array_names_and_entities = self.get_name_and_entities(entities_url, array_text_space)
+        self.get_name_and_entities(entities_url, array_text_space)
         array_parsed = string_ans.split()
-        return array_parsed
+        return array_parsed,self.array_names_and_entities
 
-    def seperate_words_with_dots(self, array_text):
+    def separate_words_with_dots(self, array_text):
         new_text = ""
         length = range(len(array_text))
         for i in length:
@@ -98,10 +95,10 @@ class Parse:
             if "http" in word or "www" in word or "t.co" in word or self.isfloat(word):
                 new_text += word + " "
                 continue
-            seperate = ""
+            separate = ""
 
-            seperate = str(word).split('.')
-            new_text += seperate[0] + ". " + seperate[1] + " "
+            separate = str(word).split('.')
+            new_text += separate[0] + ". " + separate[1] + " "
         return new_text.lstrip().split(" ")
 
     def is_url(self, text):
@@ -125,7 +122,7 @@ class Parse:
         ans = ""
         for word in array_of_words:
             ans += word + " "
-            self.dictionary[word] = index
+            self.dictionary_term_index[word] = index
         if ans == "": return ""
         return ans
 
@@ -349,35 +346,6 @@ class Parse:
         word = re.sub(r'[€£€4️⃣“”‘⁦⁩‼⑥²⁸¹❶❷❽②⑦&$.,!?,…:;^"{}=+()⁰/[\[\]]', '', word)
         return word
 
-    # def get_name_and_entities(self,idx, text):
-    #     array_text = text
-    #     counter = 0
-    #     len_array_text = len(array_text)
-    #     part_of_entity=False
-    #     # while idx < len_array_text:
-    #     counter = idx
-    #     current_word = array_text[idx]
-    #     if current_word[0].isupper():
-    #         entity = current_word
-    #         self.dic_entities_index[idx] = 1
-    #         while idx + 1 < len_array_text and array_text[idx + 1][0].isupper():
-    #             part_of_entity=True
-    #             entity += " " + self.remove_panctuation(array_text[idx + 1])
-    #             idx += 1
-    #             self.dic_entities_index[idx]=1
-    #         if not part_of_entity:
-    #             if entity.lower() in self.stop_words:
-    #                 idx += 1
-    #             else:
-    #                 self.array_names_and_entities[entity] = counter
-    #                 self.dic_entities_index[idx] = 1
-    #         else:
-    #             self.array_names_and_entities[entity] = counter
-    #         part_of_entity=False
-    #         idx += 1
-    #     else:
-    #         idx += 1
-    #     return self.array_names_and_entities
 
     def get_name_and_entities(self, entities_url, array_text_space):
         text = ""
@@ -403,47 +371,6 @@ class Parse:
                 self.array_names_and_entities[word] = all_places
         return tokinzed_entity_new
 
-    # def get_name_and_entities_new(self, array_text):
-    #     counter = 0
-    #     len_array_text = len(array_text)
-    #     part_of_entity=False
-    #     idx=0
-    #     change=False
-    #     current_word=array_text[idx]
-    #     while idx < len_array_text :
-    #         counter = idx
-    #         current_word = array_text[idx]
-    #         if len(current_word)>1 and current_word[0].isupper():
-    #             entity=self.remove_panctuation(current_word)
-    #             while idx + 1 < len_array_text and array_text[idx + 1][0].isupper():
-    #                 part_of_entity=True
-    #                 array = self.remove_panctuation(array_text[idx + 1]).split()
-    #                 if len(array)>1 and array[1][0].isupper():
-    #                     entity += " " + array[0]
-    #                     array_text[idx+1]=array[1]
-    #                     idx+=1
-    #                     change = True
-    #                     break
-    #                 entity += " " + array[0]
-    #                 idx += 1
-    #             if not part_of_entity:
-    #                 if entity.lower() in self.stop_words:
-    #                     idx += 1
-    #                     continue
-    #                 else:
-    #                     self.array_names_and_entities[entity] = counter
-    #                     idx += 1
-    #             else:
-    #                 self.array_names_and_entities[entity] = counter
-    #                 if change :
-    #                     change=False
-    #                 else:
-    #                      idx += 1
-    #             part_of_entity=False
-    #         else:
-    #             idx += 1
-    #     return self.array_names_and_entities
-
     def parse_doc(self, doc_as_list):
         """
         This function takes a tweet document as list and break it into different fields
@@ -467,7 +394,6 @@ class Parse:
         url = str(url)
         if url != "{}" and "null" not in url:
             dict2 = eval(url)
-            values = dict2.values()
             keys = dict2.keys()
             for key in keys:
                 if dict2[key] != str("null") and 't.co' not in dict2[key]:
@@ -475,8 +401,7 @@ class Parse:
                     check = url_parsed.split()
                     for word in check:
                         array_url_parsed.append(word)
-        # parse text
-        tokenized_text = self.parse_sentence(full_text, stemmer=False)
+        tokenized_text,names_and_entities = self.parse_sentence(full_text, stemmer=False)
         doc_length = len(tokenized_text)  # after text operations.
         for term in tokenized_text:
             if term not in term_dict.keys():
@@ -484,12 +409,19 @@ class Parse:
             else:
                 term_dict[term] += 1
         for term in array_url_parsed:
-            if term == 'http' or term == 'https' or term == 'www':
+            if term in self.stop_words or term == 'http' or term == 'https' or term == 'www':
+                continue
+            if term not in term_dict.keys():
+                term_dict[term] = 1
+            else:
+                term_dict[term] += 1
+        for term in names_and_entities.keys():
+            if term in self.stop_words :
                 continue
             if term not in term_dict.keys():
                 term_dict[term] = 1
             else:
                 term_dict[term] += 1
         document = Document(tweet_id, tweet_date, full_text, url, retweet_text, retweet_url, quote_text,
-                            quote_url, term_dict, doc_length)
+                            quote_url, term_dict,self.dictionary_term_index, doc_length)
         return document

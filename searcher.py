@@ -33,3 +33,6 @@ class Searcher:
             except:
                 print('term {} not found in posting'.format(term))
         return relevant_docs
+
+    def expand_query(self):
+        self.ranker.global_method_matrix(self.inverted_index)

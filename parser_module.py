@@ -29,8 +29,8 @@ class Parse:
 
         # text = "100⁰ # \ | @ ! $ % ^ & * ( ) ` ~ + = _ \ ' | : ; / ? . , } { ] [ https://  3.63 million say “not at all.” I walked in corona the Corona in Corona  covid-19 streed. COVID-19 and he found 10 million dollar for 6 percent"
         #text = "€£💐🔃🙏🏻❤⬇🐮💗，🎊🎁🎉🎈🍸‘🤦🏻‍♀🕯🙏🏼🔹€4️⃣🐣👍🏼🍰🚨💥🇺🇸🚫✅❗️👇⁦👏⁩“”⚠🇦🇷‼😭😩😪🤬🤡😷😁😳😂😢🤣⑥²⁸¹❶❷❽②⑦&$.,!?,…:;^ Meet walked Donald Trump in Y'all Tom the streed and he found 10 million dollar for 6 percent https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
-        self.dictionary_index = {}
         self.array_names_and_entities = {}
+        self.dictionary_index = {}
         text = text.replace("\n", ". ")
         text = self.ignore_emojis(text)
         array_text_space = text.split(" ")
@@ -40,14 +40,14 @@ class Parse:
         string_ans_index = 0
         entities_url = []  # help us to replace the url to "" because in get_entities it returns parts of the url
         for word, idx in zip(array_text_space, array_size):
-            if word =="I…":
-                print("")
             ans = ""
+            # print(text)
             if word == '' or word == ' ': continue
             check_digit = self.isdigit(word)
             if (len(word) < 2 and check_digit is False) or self.is_ascii(word) is False:
                 word = self.remove_panctuation(word)
-                if self.is_ascii(word) is False or word == '' or word == " " or word in self.stop_words:
+                if self.is_ascii(word) is False or word == '' or word == " " or len(word)<2:
+                    # print(word)
                     continue
             if ans == "" and self.is_url(word):
                 entities_url.append(word)
@@ -77,6 +77,7 @@ class Parse:
             if ans == "":
                 ans = self.remove_panctuation(word)
                 if word.lower() in self.stop_words: continue
+            #ans = word
             string_ans += self.add_to_dictionary(ans, string_ans_index)
             string_ans_index += len(word) + 1
 
@@ -122,7 +123,7 @@ class Parse:
         ans = ""
         for word in array_of_words:
             ans += word + " "
-            self.dictionary_term_index[word] = index
+            self.dictionary_index[word] = index
         if ans == "": return ""
         return ans
 
@@ -392,11 +393,14 @@ class Parse:
         entities_local_dict = {}
         array_url_parsed = []
         url = str(url)
+        rt=False
+        if "RT"  in full_text:
+            rt=True
         if url != "{}" and "null" not in url:
             dict2 = eval(url)
             keys = dict2.keys()
             for key in keys:
-                if dict2[key] != str("null") and 't.co' not in dict2[key]:
+                if dict2[key] != str("null") and "t.co" not in dict2[key]:
                     url_parsed = self.parse_url(dict2[key])
                     check = url_parsed.split()
                     for word in check:
@@ -423,5 +427,5 @@ class Parse:
             else:
                 term_dict[term] += 1
         document = Document(tweet_id, tweet_date, full_text, url, retweet_text, retweet_url, quote_text,
-                            quote_url, term_dict,self.dictionary_term_index, doc_length)
+                            quote_url, term_dict,rt, doc_length)
         return document

@@ -86,7 +86,7 @@ def run_engine():
     # index the document data
     # dic_index=0
     # len_parsed_documents = len(documents_list_after_parse)
-    # indexer.divide_dictionary(documents_list_after_parse,idx)
+    indexer.divide_dictionary(documents_list_after_parse,idx)
     # sub_dic_idx=0
     # index = 0
     # limit = int(idx/10)

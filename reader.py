@@ -26,7 +26,7 @@ class ReadFile:
         # "{:,} files, {:,} folders".format(files, folders)
 
 
-        files = glob.glob('./Data/**/*.parquet')
+        files = glob.glob('./Data - Copy/**/*.parquet')
         df=pd.concat([pd.read_parquet(fp) for fp in files])
         # full_path = os.path.join(self.corpus_path, file_name)
         #

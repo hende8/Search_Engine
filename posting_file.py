@@ -1,6 +1,7 @@
 from posting_node import PostingNode
 from collections import OrderedDict
 import json
+import indexer
 def obj_dict(obj):
     return obj.__dict__
 class PostingFile:
@@ -13,15 +14,18 @@ class PostingFile:
             self.posting_file_dictionary = dict
         else:
             self.posting_file_dictionary = {}
-    def add_term_to_posting_file(self,tweet_id,freq_in_tweet,posting_id=None):
+
+    def add_term_to_posting_file(self,tweet_id, tf, freq_in_tweet,posting_id=None):
         '''
         add term to the posting file
         :param tweet_id:
         :param freq_in_tweet:
         :param posting_id:
+        :param tf:
+        :param index_place:
         :return: posting id of the new/old posting node
         '''
-        new_posting_node = PostingNode(tweet_id,freq_in_tweet)
+        new_posting_node = PostingNode(tweet_id, tf, freq_in_tweet)
         new_posting_id = new_posting_node.posting_id
         keys = self.posting_file_dictionary.keys()
         if posting_id is not None and posting_id in keys:

@@ -24,9 +24,11 @@ class ReadFile:
 
         # print
         # "{:,} files, {:,} folders".format(files, folders)
-
-
-        files = glob.glob('./Data - Copy/**/*.parquet')
+        # E:\Program
+        # Files\BGU\fourth
+        # year\IR\Data\Data - Copy
+        files = glob.glob('E:Program Files/BGU/fourth year/IR/Data/Data - Copy/**/*.parquet')
+        #files = glob.glob('./Data - Copy/**/*.parquet')
         df=pd.concat([pd.read_parquet(fp) for fp in files])
         # full_path = os.path.join(self.corpus_path, file_name)
         #

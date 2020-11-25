@@ -11,12 +11,9 @@ import ast
 class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
-        self.dictionary = {}
         self.dictionary_index = {}
-        self.dic_entities = {}
-        self.dic_entities_index = {}
         self.array_names_and_entities = {}
-        self.covid_list = ["corona", "covid", "covid-19", "covid19", "coronavirus", "coronaviruses", "#covid19",
+        self.covid_list = ["corona", "covid", "covid 19" "covid-19", "covid19", "coronavirus", "coronaviruses", "#covid19",
                            "#corona", "#COVIDー19", "#coronaviruses", "#covid", "#covid-19", "#coronavirus"]
         self.list_percent = ["percent", "Percent", "Percentage", "percentage"]
 
@@ -30,9 +27,10 @@ class Parse:
         # print(text)
         # text = "6 9 0 7a ❶ ³"
 
-        # text = "100⁰ # \ | @ ! $ % ^ & * ( ) ` ~ + = _ \ ' | : ; / ? . , } { ] [ https://  3.63 million say “not at all.” I walked in corona the Corona in Corona  covid-19 streed. COVID-19 and he found 10 million dollar for 6 percent"
+        #text = "b go 100⁰ # \ | @ ! $ % ^ & * ( ) ` ~ + = _ \ ' | : ; / ? . , } { ] [ https://  3.63 million say “not at all.” I walked in corona the Corona in Corona  covid-19 streed. COVID-19 and he found 10 million dollar for 6 percent"
         #text = "€£💐🔃🙏🏻❤⬇🐮💗，🎊🎁🎉🎈🍸‘🤦🏻‍♀🕯🙏🏼🔹€4️⃣🐣👍🏼🍰🚨💥🇺🇸🚫✅❗️👇⁦👏⁩“”⚠🇦🇷‼😭😩😪🤬🤡😷😁😳😂😢🤣⑥²⁸¹❶❷❽②⑦&$.,!?,…:;^ Meet walked Donald Trump in Y'all Tom the streed and he found 10 million dollar for 6 percent https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
         self.array_names_and_entities = {}
+        self.dictionary_index = {}
         text = text.replace("\n", ". ")
         text = self.ignore_emojis(text)
         array_text_space = text.split(" ")
@@ -48,7 +46,7 @@ class Parse:
             check_digit = self.isdigit(word)
             if (len(word) < 2 and check_digit is False) or self.is_ascii(word) is False:
                 word = self.remove_panctuation(word)
-                if self.is_ascii(word) is False or word == '' or word == " ":
+                if self.is_ascii(word) is False or word == '' or word == " " or len(word)<2:
                     # print(word)
                     continue
             if ans == "" and self.is_url(word):
@@ -77,8 +75,8 @@ class Parse:
                     word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(word.lstrip('-'))):
                 ans = self.convert_str_to_number(array_text_space, idx)
             if ans == "":
-                if word.lower() in self.stop_words: continue
                 ans = self.remove_panctuation(word)
+                if word.lower() in self.stop_words: continue
             #ans = word
             string_ans += self.add_to_dictionary(ans, string_ans_index)
             string_ans_index += len(word) + 1
@@ -125,7 +123,7 @@ class Parse:
         ans = ""
         for word in array_of_words:
             ans += word + " "
-            self.dictionary[word] = index
+            self.dictionary_index[word] = index
         if ans == "": return ""
         return ans
 
@@ -465,12 +463,15 @@ class Parse:
         entities_local_dict = {}
         array_url_parsed = []
         url = str(url)
+        rt=False
+        if "RT"  in full_text:
+            rt=True
         if url != "{}" and "null" not in url:
             dict2 = eval(url)
             values = dict2.values()
             keys = dict2.keys()
             for key in keys:
-                if dict2[key] != str("null") and 't.co' not in dict2[key]:
+                if dict2[key] != str("null") and "t.co" not in dict2[key]:
                     url_parsed = self.parse_url(dict2[key])
                     check = url_parsed.split()
                     for word in check:
@@ -491,5 +492,5 @@ class Parse:
             else:
                 term_dict[term] += 1
         document = Document(tweet_id, tweet_date, full_text, url, retweet_text, retweet_url, quote_text,
-                            quote_url, term_dict, doc_length)
+                            quote_url, term_dict,rt, doc_length)
         return document

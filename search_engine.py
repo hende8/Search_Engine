@@ -7,6 +7,7 @@ import utils
 import timeit
 
 
+all_documents = []
 
 def run_engine():
     """
@@ -33,7 +34,7 @@ def run_engine():
         parsed_document = p.parse_doc(document)
         number_of_documents += 1
         documents_list_after_parse.append(parsed_document)
-
+    all_documents = documents_list_after_parse
     stop = timeit.default_timer()
     print('Time: ', stop - start)
 
@@ -70,6 +71,8 @@ def run_engine():
     # utils.save_obj(indexer.inverted_idx, "inverted_idx")
     # utils.save_obj(indexer.postingDict, "posting")
 
+def get_document_after_parse():
+    return all_documents
 
 def load_index():
     print('Load inverted index')
@@ -91,6 +94,8 @@ def main():
     query = input("Please enter a query: ")
     k = int(input("Please enter number of docs to retrieve: "))
     inverted_index = load_index()
-    for doc_tuple in search_and_rank_query(query, inverted_index, k):
+    dicrrr = {}
+    dicrrr = search_and_rank_query(query,inverted_index,k)
+    for doc_tuple in dicrrr:
         print('tweet id: {}, score (unique common words with query): {}'.format(doc_tuple[0], doc_tuple[1]))
 # def main(corpus_path,output_path,stemming,queries,num_docs_to_retrieve):

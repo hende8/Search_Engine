@@ -86,7 +86,6 @@ def load_index():
 
 def search_and_rank_query(query, inverted_index, k):
     p = Parse()
-
     query_as_list = p.parse_sentence(query)
     searcher = Searcher(inverted_index)
     # searcher.ranker.global_method_matrix(inverted_index)

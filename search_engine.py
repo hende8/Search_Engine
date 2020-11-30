@@ -6,7 +6,7 @@ from searcher import Searcher
 import utils
 import timeit
 
-
+import datetime
 
 def run_engine():
     """
@@ -14,203 +14,108 @@ def run_engine():
     :return:
     """
     number_of_documents = 0
-
     config = ConfigClass()
     r = ReadFile(corpus_path=config.get__corpusPath())
     p = Parse()
     indexer = Indexer(config)
-
-    # documents_list = r.read_file(file_name='sample3.parquet')
     pathes = r.get_all_path_of_parquet()
-    idx=0
-    index_inner=0
-    documents_list_after_parse=[]
     length_of_array = len(pathes)
     check=0
+    check2=0
+    parsed_doc_list = list()
+
     for i in range(0,length_of_array):
-        start = timeit.default_timer()
-        i=index_inner
-        if i==4:
+        if i ==10 or check2==11:
             break
-        if i==length_of_array-1:
-            documents_list = r.get_documents(pathes[i][0], pathes[i][1])
-            print(pathes[i][1])
-            index_inner+=1
-        else:
-            documents_list = r.get_documents(pathes[i][0],pathes[i][0])
-            print(pathes[i][1])
-            # break
-            documents_list.extend(r.get_documents(pathes[i+1][0],pathes[i+1][0]))
-            print(pathes[i+1][1])
-            index_inner+=2
+        print(datetime.datetime.now())
+        documents_list = r.get_documents(pathes[i][0],pathes[i][0])
+        start3 = timeit.default_timer()
         for document in documents_list:
             parsed_document = p.parse_doc(document)
             check+=1
             if parsed_document ==None:
                 continue
-            if check>40:
-                check=0
-                break
             number_of_documents += 1
-            documents_list_after_parse.append(parsed_document)
-        stop = timeit.default_timer()
-        print('Time in minutes: ', (stop - start) / 60, "round number :",i,i+1)
-        for doc in documents_list_after_parse:
-            number_of_documents+=1
-            indexer.add_new_doc(doc)
-        documents_list_after_parse = []
-        print("start sort_dictionary_by_key...")
-        indexer.sort_dictionary_by_key(indexer.inverted_idx)
-        print("start sort_posting_file...")
-        indexer.posting_file.sort_posting_file()
-        print("start write_to_disk...")
-        indexer.write_to_disk(indexer.sub_dic_posting_file_idx)
-        print("**************** move to next sub dictionary :", idx)
-        indexer.new_sub_dict()
-    print("start merging sub dictionaries...")
-    inverted_idx,max_index_dic = indexer.merge_all_posting_and_inverted_idx()
-    print("start sort_posting_file_by_abc...")
-    indexer.sort_posting_file_by_abc()
-    print("number of documents :", indexer.number_of_documents)
-    indexer.add_idf_to_dictionary(number_of_documents,max_index_dic)
+            parsed_doc_list.append(parsed_document)
+            if number_of_documents%1000==0:
+                stop3 = timeit.default_timer()
+                print('total 200K of docs time to parse', (stop3 - start3) / 60, "round number :", i,i + 1)
+                print(datetime.datetime.now())
+                for doc in parsed_doc_list:
+                    indexer.add_new_doc(doc)
+                print("start writing and finish to add docs to post dictionary ", number_of_documents)
+                print(datetime.datetime.now())
+                indexer.write_posting_file_to_txt_file(check2)
+                print(datetime.datetime.now())
+                check2 += 1
+                parsed_doc_list.clear()
+                parsed_doc_list=list()
+                if check2==10:
+                    start3 = timeit.default_timer()
+                    indexer.merge_posting_files()
+                    indexer.split_posting_file_and_create_inverted_index()
+                    stop3 = timeit.default_timer()
+                    print('total time to merge 400K of docs', (stop3 - start3) / 60, "round number :", i)
+                    check2+=1
+                    break
+    stop3 = timeit.default_timer()
+    print('total 200K of docs time to parse and write txt file', (stop3 - start3) / 60, "round number :", i)
+    # start3 = timeit.default_timer()
+    # indexer.merge_posting_files()
+    # stop3 = timeit.default_timer()
+    # print('total time to merge 400K of docs', (stop3 - start3) / 60, "round number :", i, i + 1)
 
-    # documents_list = r.read_file('covid19_07-11.snappy.parquet')
 
-    # documents_list = r.read_file()
     # stop = timeit.default_timer()
-    # print('Time in minutes: ', (stop - start)/60)
-    # print('len of list : ',len(documents_list))
-    # documents_list_after_parse=[]
-    # Iterate over every document in the file
+    # print(datetime.datetime.now())
+    # print('parse Time in minutes: ', (stop - start) / 60, "round number :",i,i+1)
     # start = timeit.default_timer()
-    # idx=0
-    # for document in documents_list:
-    #     # idx+=1
-    #     # if idx>100:
-    #     #    break
-    #     parsed_document = p.parse_doc(document)
-    #     number_of_documents += 1
-    #     documents_list_after_parse.append(parsed_document)
+    # documents_list.clear()
+    # documents_list=[]
+    # check2=0
+    # start2 = timeit.default_timer()
     #
-    # stop = timeit.default_timer()
-    # print('Time in minutes: ', (stop - start)/60)
+    # for doc in documents_list_after_parse:
+    #     indexer.add_new_doc(doc)
+    #     if check2==200000:
+    #         indexer.write_posting_file_to_txt_file(check2)
+    #     if check2==400000:
+    #         indexer.write_posting_file_to_txt_file(check2)
+    #         start = timeit.default_timer()
+    #         indexer.merge_posting_files()
+    #         stop = timeit.default_timer()
+    #         print('merge Time in minutes: ', (stop - start) / 60, "round number :", i, i + 1)
+    #
+    #     # if check2==3:
+    #     #     indexer.write_posting_file_to_txt_file(check2)
+    #     # if check2==4:
+    #     #     indexer.write_posting_file_to_txt_file(check2)
+    #     # if check2==5:
+    #     #     indexer.write_posting_file_to_txt_file(check2)
+    #     # if check2 == 6:
+    #     #     indexer.write_posting_file_to_txt_file(check2)
+    #     # # if check2 == 7:
+    #     # #     indexer.write_posting_file_to_txt_file(check2)
+    #     check2 += 1
+    # print('total time in merge and create posting file in minutes: ', (stop - start2) / 60, "round number :", i,
+    #       i + 1)
+    # indexer.merge_posting_files()
+    print("finish")
+    # indexer.posting_file.merge_all_posting_and_inverted_idx_round2()
+    # documents_list_after_parse.clear()
+    # documents_list_after_parse=[]
+    # stop2 = timeit.default_timer()
+    #indexer.posting_file.write_last_posting_file_to_disk()
+    print(datetime.datetime.now())
+    # print('%%%%%%%%%create posting files Time in minutes: ', (stop2 - start) / 60, "round number :",i,i+1)
+    # start = timeit.default_timer()
+    # indexer.posting_file.write_last_posting_file_to_disk()
+    # print("starting merging.........")
+    # print(datetime.datetime.now())
+    # indexer.merge_posting_files_by_index()
+    # stop2 = timeit.default_timer()
+    # print('#########Merge time ny minutes: ', (stop2 - start) / 60)
 
-    #indexer.write_new_dictionary_to_disk()
-    # index the document data
-    # dic_index=0
-    # len_parsed_documents = len(documents_list_after_parse)
-    #indexer.divide_dictionary(documents_list_after_parse,idx)
-    # sub_dic_idx=0
-    # index = 0
-    # limit = int(idx/10)
-    # limit_extra = idx -limit*10
-    # while dic_index<10:
-    #     while sub_dic_idx< limit and index<len_parsed_documents:
-    #         indexer.add_new_doc(documents_list_after_parse[index])
-    #         sub_dic_idx+=1
-    #         index+=1
-    #         if dic_index==9:
-    #             limit = limit +limit_extra
-    #     indexer.sort_dictionary_by_key(indexer.inverted_idx)
-    #     indexer.posting_file.sort_posting_file()
-    #     indexer.write_to_disk(indexer.sub_dic_posting_file_idx)
-    #     indexer.new_sub_dict()
-    #     dic_index+=1
-    #     sub_dic_idx=0
-    # indexer.write_to_disk_dic_max_tf_and_uniqueness()
-    # ans = indexer.open_dic_max_tf_and_uniqueness()
-'''
-
-
-
-    inverted_idx = indexer.merge_all_posting_and_inverted_idx()
-    keys = inverted_idx.keys()
-    counter_a=0
-    counter_b=0
-    counter_c=0
-    counter_d=0
-    counter_e=0
-    counter_f=0
-    counter_g=0
-    counter_h=0
-    counter_i=0
-    counter_j=0
-    counter_k=0
-    counter_l=0
-    counter_m=0
-    counter_n=0
-    counter_o=0
-    counter_p=0
-    counter_q=0
-    counter_r=0
-    counter_s=0
-    counter_t=0
-    counter_u=0
-    counter_v=0
-    counter_w=0
-    counter_x=0
-    counter_y=0
-    counter_z=0
-    counter_else=0
-    for term in keys():
-        letter= term[0].lower()
-        if letter=='a': counter_a+=1
-        elif letter=='b': counter_b+=1
-        elif letter=='c': counter_c+=1
-        elif letter=='d': counter_d+=1
-        elif letter=='e': counter_e+=1
-        elif letter=='f': counter_f+=1
-        elif letter=='g': counter_g+=1
-        elif letter=='h': counter_h+=1
-        elif letter=='i': counter_i+=1
-        elif letter=='j': counter_j+=1
-        elif letter=='k': counter_k+=1
-        elif letter=='l': counter_l+=1
-        elif letter=='m': counter_m+=1
-        elif letter=='n': counter_n+=1
-        elif letter=='o': counter_o+=1
-        elif letter=='p': counter_p+=1
-        elif letter=='q': counter_q+=1
-        elif letter=='r': counter_r+=1
-        elif letter=='s': counter_s+=1
-        elif letter=='t': counter_t+=1
-        elif letter=='u': counter_u+=1
-        elif letter=='v': counter_v+=1
-        elif letter=='w': counter_w+=1
-        elif letter=='x': counter_x+=1
-        elif letter=='y': counter_y+=1
-        elif letter=='z': counter_z+=1
-        else : counter_else+=1
-    print("********************************************")
-    print("counter_a : ", counter_a)
-    print("counter_b : ", counter_b)
-    print("counter_c : ", counter_c)
-    print("counter_d : ", counter_d)
-    print("counter_e : ", counter_e)
-    print("counter_f : ", counter_f)
-    print("counter_g : ", counter_g)
-    print("counter_h : ", counter_h)
-    print("counter_i : ", counter_i)
-    print("counter_j : ", counter_j)
-    print("counter_k : ", counter_k)
-    print("counter_l : ", counter_l)
-    print("counter_m : ", counter_m)
-    print("counter_n : ", counter_n)
-    print("counter_o : ", counter_o)
-    print("counter_p : ", counter_p)
-    print("counter_q : ", counter_q)
-    print("counter_r : ", counter_r)
-    print("counter_s : ", counter_s)
-    print("counter_t : ", counter_t)
-    print("counter_u : ", counter_u)
-    print("counter_v : ", counter_v)
-    print("counter_w : ", counter_w)
-    print("counter_x : ", counter_x)
-    print("counter_y : ", counter_y)
-    print("counter_z : ", counter_z)
-    print("counter_else : ", counter_else)
-    print("********************************************")
-'''
     # searcher =Searcher(inverted_idx)
     # searcher.expand_query()
 

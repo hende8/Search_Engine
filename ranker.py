@@ -1,12 +1,11 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 from document import Document
-from indexer import Indexer
 import indexer
 import math
 import copy
 import pandas as pd
-
+import json
 from posting_file import PostingFile
 
 
@@ -15,7 +14,6 @@ class Ranker:
         pass
         self.docs = []
         self.docs = indexer.get_all_docs()
-        dic_tf = {}
 
     @staticmethod
     def tf_single(relevant_doc_single,all_docs):
@@ -80,18 +78,20 @@ class Ranker:
         """
         return sorted_relevant_doc[:k]
 
-    def global_method_matrix(self, inverted_idx):
+    def global_method_matrix(self, inverted_idx=None):
         '''
         create matrix of global method ranking to the inverted index
         :param inverted_idx:
         :return:
         '''
+        if inverted_idx==None:
+            inverted_idx=self.get_inverted_index()
         keys = inverted_idx.keys()
         list =[]
         columns= []
         temp_dic = {}
         for key in keys :
-            if inverted_idx[key]['frequency_show_term'] > 5:
+            if inverted_idx[key]['frequency_show_term'] > 10:
                 temp_dic[key]= {}
                 temp_dic[key]['frequency_show_term']= inverted_idx[key]['frequency_show_term']
                 temp_dic[key]['posting_pointer']= inverted_idx[key]['posting_pointer']
@@ -153,12 +153,12 @@ class Ranker:
 
                     val = self.calculate_frequency_and_normalize(c_i_j = sigma, c_i_i = temp_dic[row]['frequency_show_term'],c_j_j = temp_dic[column]['frequency_show_term'])
                     df[row][column] = val
-
         print(df)
 
     def calculate_frequency_and_normalize(self,c_i_j,c_i_i,c_j_j):
         down = (c_i_i)+(c_j_j)-c_i_j
         return c_i_j/down
-
-
-        print(df)
+    # def get_inverted_index(self):
+    #     with open('inverted_dic_file_' + str(2) + '.json') as json_file:
+    #         data = json.load(json_file)
+    #         return data

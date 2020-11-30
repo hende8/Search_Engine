@@ -42,9 +42,11 @@ class Indexer:
         self.number_of_documents+=1
         document_dictionary = document.term_doc_dictionary
         max_tf=0
+        mechane_tf = (document.doc_length - document.size_of_entities)
+        if mechane_tf == 0: mechane_tf = 0.0001
         # Go over each term in the doc
         for term in document_dictionary.keys():
-            tf = document_dictionary[term]/document.doc_length
+            tf = document_dictionary[term] / mechane_tf
             tf_in_term = document_dictionary[term]
             if tf_in_term > max_tf:
                 max_tf = tf
@@ -288,7 +290,7 @@ class Indexer:
         '''
         build the posting file and the inverted index step by step like a tournament
         '''
-        path =  "C:\\Users\\HEN\\PycharmProjects\\Search_Engine_Project"
+        path =  "C:\\Users\\Niv\\PycharmProjects\\Search_EngineProject"
         files = []
         has_files_to_merge = True
         is_merge = False

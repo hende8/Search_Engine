@@ -71,4 +71,3 @@ class PostingFile:
                 list= json.loads(value, object_hook=lambda d: PostingNode(**d))
                 temp_dic_posting_file[key]=list
         return temp_dic_posting_file
-        return temp_dic_posting_file

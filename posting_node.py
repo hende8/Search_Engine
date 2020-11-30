@@ -5,11 +5,14 @@ class PostingNode:
     index = 0
 
     def __init__(self, tweet_id, tf, frequency_show_in_document, posting_id=''):
-        self.tweet_id = str(tweet_id)
-        self.frequency_show_in_document = str(frequency_show_in_document)
+        self.tid = str(tweet_id)
+        self.fr = str(frequency_show_in_document)
         if posting_id == '':
-            self.posting_id = str(PostingNode.index)
+            self.pid = str(PostingNode.index)
+            PostingNode.index += 1
         else:
-            self.posting_id = str(posting_id)
+            self.pid = str(posting_id)
         self.tf = tf
-        PostingNode.index += 1
+    def __iter__(self):
+        print('__iter__ called')
+        return self

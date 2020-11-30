@@ -1,5 +1,3 @@
-import operator
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 from document import Document
@@ -18,7 +16,6 @@ class Ranker:
         pass
         self.docs = []
         self.docs = indexer.get_all_docs()
-        dic_tf = {}
 
     @staticmethod
     def rank_relevant_doc(relevant_docs):

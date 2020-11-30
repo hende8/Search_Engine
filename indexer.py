@@ -1,19 +1,8 @@
 from collections import OrderedDict
 from posting_file import PostingFile
-from posting_node import PostingNode
 import math
-import json
-import re
 import os
 from ranker import Ranker
-from document import Document
-import document
-all_docs = {}
-def get_all_docs():
-    return all_docs
-
-def get_document_by_tweetid(tweet_id):
-    return all_docs[tweet_id]
 
 class Indexer:
 
@@ -41,24 +30,6 @@ class Indexer:
         self.idx_posting_file_test=0
         self.counter_test=0
         self.number_of_documents=0
-    def new_sub_dict(self):
-        self.inverted_idx={}
-        self.posting_file=PostingFile()
-        self.sub_dic_posting_file_idx+=1
-    def add_new_doc_round2(self,document):
-        write=False
-        for term in document.term_doc_dictionary.keys():
-            tf = round(document.term_doc_dictionary[term]/document.doc_length,4)
-            tf_in_term = document.term_doc_dictionary[term]
-            #tf_in_term = document.document_dictionary[term]
-
-            self.posting_file.add_term_to_posting_file_round2(document.tweet_id,tf,tf_in_term,term)
-        self.counter_round2+=1
-        if self.counter_round2 == 20:
-            self.posting_file.write_to_disk_after_X_of_documents()
-            self.counter_round2 = 0
-
-
     def add_new_doc(self, document):
         self.number_of_documents +=1
         mechane_tf = (document.doc_length - document.size_of_entities)
@@ -167,35 +138,6 @@ class Indexer:
         self.postingDic.clear()
         self.postingDic={}
         self.write_details_about_docs()
-    def merge_posting_files(self):
-        path = os.path.dirname(os.path.abspath(__file__))+'\\Posting_Files\\'
-        files = []
-        has_files_to_merge = True
-        is_merge = False
-        counter = 0
-        while has_files_to_merge:
-            files_in_path = os.listdir(path)
-            count = 0
-            for i in files_in_path:
-                files.append(int(i.split(".")[0]))
-                counter += 1
-            files.sort()
-            max_size = int(max(files)) + 1
-            even = True
-            if len(files) % 2 == 1:
-                even = False
-            if len(files) > 1:
-                is_merge = True
-                for i in range(0, len(files), 2):
-                    if i + 1 == len(files) and not even:
-                        continue
-                    self.merge_two_posting_file_txt(files[i],files[i+1] ,max_size)
-                    os.remove(path + "\\" + str(files[i]) + ".txt")
-                    os.remove(path + "\\" + str(files[i+1]) + ".txt")
-                    max_size += 1
-                files = []
-            else:
-                has_files_to_merge = False
     def merge_posting_files(self):
         path = os.path.dirname(os.path.abspath(__file__))+'\\Posting_Files\\'
         files = []
@@ -421,6 +363,22 @@ class Indexer:
 
 
 
+    # def new_sub_dict(self):
+    #     self.inverted_idx={}
+    #     self.posting_file=PostingFile()
+    #     self.sub_dic_posting_file_idx+=1
+    # def add_new_doc_round2(self,document):
+    #     write=False
+    #     for term in document.term_doc_dictionary.keys():
+    #         tf = round(document.term_doc_dictionary[term]/document.doc_length,4)
+    #         tf_in_term = document.term_doc_dictionary[term]
+    #         #tf_in_term = document.document_dictionary[term]
+    #
+    #         self.posting_file.add_term_to_posting_file_round2(document.tweet_id,tf,tf_in_term,term)
+    #     self.counter_round2+=1
+    #     if self.counter_round2 == 20:
+    #         self.posting_file.write_to_disk_after_X_of_documents()
+    #         self.counter_round2 = 0
 
 
     # def add_new_doc(self, document,clear_tresh=10000):
@@ -507,225 +465,225 @@ class Indexer:
     #     # self.dic_max_tf_and_uniqueness[str(document.tweet_id)]['max_tf'] = max_tf
     #     # self.dic_max_tf_and_uniqueness[str(document.tweet_id)]['uniqueness_words'] = len(document_dictionary)
     #     # self.dic_max_tf_and_uniqueness[str(document.tweet_id)]['rt'] = str(document.rt)
-    def add_idf_to_dictionary(self,number_of_document,idx):
-        keys = self.inverted_idx.keys()
-        for key in keys:
-            self.inverted_idx[key]['idf'] = math.log10(number_of_document/self.inverted_idx[key]['frequency_show_term'])
-        os.remove(os.path.dirname(os.path.abspath(__file__)) + "\\inverted_dic_file_" + str(idx) + ".json")
-        self.write_inverted_index_to_disk(idx,self.inverted_idx)
-
-    def write_to_disk_dic_max_tf_and_uniqueness(self):
-        '''
-        write dictionary max tf and number of uniqueness word in document
-        :return:
-        '''
-        j = json.dumps(self.dic_max_tf_and_uniqueness)
-        with open('dic_max_tf_and_uniqueness.json','w') as f:
-            f.write(j)
-            f.close()
-    def open_dic_max_tf_and_uniqueness(self):
-        '''
-        get max_tf and uniqueness dictionary from json to dictionary
-        :return:
-        '''
-        with open('dic_max_tf_and_uniqueness.json') as json_file:
-            data = json.load(json_file)
-            return data
-    def write_new_dictionary_to_disk(self):
-        self.sort_dictionary_by_key(self.inverted_idx)
-        self.write_inverted_index_to_disk(idx=self.idx_inverted_dic,inverted_index=self.inverted_idx)
-    def divide_dictionary(self, documents_list_after_parse,idx=None):
-        '''
-        divide the dictionary to multiple smaller dictionaries
-        :param documents_list_after_parse: dictionary
-        :param idx:
-        :return:
-        '''
-        if idx is None:
-            idx = len(documents_list_after_parse)
-        dic_index = 0
-        sub_dic_idx = 0
-        index = 0
-        limit = int(idx / 10)
-        limit_extra = idx - limit * 10
-        len_parsed_documents = len(documents_list_after_parse)
-        while dic_index < 10:
-            while sub_dic_idx < limit and index < len_parsed_documents:
-                self.add_new_doc(documents_list_after_parse[index])
-                sub_dic_idx += 1
-                index += 1
-                if dic_index == 9:
-                    limit = limit + limit_extra
-            self.sort_dictionary_by_key(self.inverted_idx)
-            self.posting_file.sort_posting_file()
-            self.write_to_disk(self.sub_dic_posting_file_idx)
-            self.new_sub_dict()
-            dic_index += 1
-            sub_dic_idx = 0
-        self.write_to_disk_dic_max_tf_and_uniqueness()
-        # ans = self.open_dic_max_tf_and_uniqueness()
-
-    def write_to_disk(self,idx, posting_file=None,inverted_idx=None):
-        '''
-        write posting file and inverted index to disk
-        :param idx: offset of the dictionary
-        :param posting_file:
-        :param inverted_idx:
-        '''
-        if inverted_idx is not None:
-            j=json.dumps(inverted_idx)
-        else:
-            j =json.dumps(self.inverted_idx)
-        with open('inverted_dic_file_'+str(idx)+'.json','w') as f:
-            f.write(j)
-            f.close()
-        # j =json.dumps(self.posting_file.posting_file_to_json())
-        if posting_file is not None:
-            j = json.dumps(posting_file.posting_file_to_json())
-        else:
-            j = json.dumps(self.posting_file.posting_file_to_json())
-
-        with open('posting_file_' + str(idx) + '.json', 'w') as f:
-            f.write(j)
-            f.close()
-    def write_posting_file_to_disk(self, idx):
-        '''
-        write posting file to disk
-        :param idx: offset of the posting file
-        '''
-        j = json.dumps(self.posting_file.posting_file_to_json())
-        with open('posting_file_' + str(idx) + '.json', 'w') as f:
-            f.write(j)
-            f.close()
-    def write_inverted_index_to_disk(self,idx,inverted_index):
-        path = os.path.dirname(os.path.abspath(__file__))
-        if not os.path.exists(path+'\\inverted_index'):
-            os.mkdir(path+'\\inverted_index')
-        path = os.path.dirname(os.path.abspath(__file__))+'\\inverted_index\\'
-        j =json.dumps(inverted_index)
-        with open(path+'\\inverted_dic_file_'+str(idx)+'.json','w') as f:
-            f.write(j)
-            f.close()
-        self.inverted_idx.clear()
-        self.inverted_idx={}
-
-    def open_sub_dic_inverted_index(self, idx):
-        '''
-        open sub dictionary of inverted dictionary
-        :param idx: offset of the sub dictionary
-        :return:
-        '''
-        with open('inverted_dic_file_' + str(idx) + '.json') as json_file:
-            data = json.load(json_file)
-            return data
-    '''
+    # def add_idf_to_dictionary(self,number_of_document,idx):
+    #     keys = self.inverted_idx.keys()
+    #     for key in keys:
+    #         self.inverted_idx[key]['idf'] = math.log10(number_of_document/self.inverted_idx[key]['frequency_show_term'])
+    #     os.remove(os.path.dirname(os.path.abspath(__file__)) + "\\inverted_dic_file_" + str(idx) + ".json")
+    #     self.write_inverted_index_to_disk(idx,self.inverted_idx)
+    #
+    # def write_to_disk_dic_max_tf_and_uniqueness(self):
+    #     '''
+    #     write dictionary max tf and number of uniqueness word in document
+    #     :return:
+    #     '''
+    #     j = json.dumps(self.dic_max_tf_and_uniqueness)
+    #     with open('dic_max_tf_and_uniqueness.json','w') as f:
+    #         f.write(j)
+    #         f.close()
+    # def open_dic_max_tf_and_uniqueness(self):
+    #     '''
+    #     get max_tf and uniqueness dictionary from json to dictionary
+    #     :return:
+    #     '''
+    #     with open('dic_max_tf_and_uniqueness.json') as json_file:
+    #         data = json.load(json_file)
+    #         return data
+    # def write_new_dictionary_to_disk(self):
+    #     self.sort_dictionary_by_key(self.inverted_idx)
+    #     self.write_inverted_index_to_disk(idx=self.idx_inverted_dic,inverted_index=self.inverted_idx)
+    # def divide_dictionary(self, documents_list_after_parse,idx=None):
+    #     '''
+    #     divide the dictionary to multiple smaller dictionaries
+    #     :param documents_list_after_parse: dictionary
+    #     :param idx:
+    #     :return:
+    #     '''
+    #     if idx is None:
+    #         idx = len(documents_list_after_parse)
+    #     dic_index = 0
+    #     sub_dic_idx = 0
+    #     index = 0
+    #     limit = int(idx / 10)
+    #     limit_extra = idx - limit * 10
+    #     len_parsed_documents = len(documents_list_after_parse)
+    #     while dic_index < 10:
+    #         while sub_dic_idx < limit and index < len_parsed_documents:
+    #             self.add_new_doc(documents_list_after_parse[index])
+    #             sub_dic_idx += 1
+    #             index += 1
+    #             if dic_index == 9:
+    #                 limit = limit + limit_extra
+    #         self.sort_dictionary_by_key(self.inverted_idx)
+    #         self.posting_file.sort_posting_file()
+    #         self.write_to_disk(self.sub_dic_posting_file_idx)
+    #         self.new_sub_dict()
+    #         dic_index += 1
+    #         sub_dic_idx = 0
+    #     self.write_to_disk_dic_max_tf_and_uniqueness()
+    #     # ans = self.open_dic_max_tf_and_uniqueness()
+    #
+    # def write_to_disk(self,idx, posting_file=None,inverted_idx=None):
+    #     '''
+    #     write posting file and inverted index to disk
+    #     :param idx: offset of the dictionary
+    #     :param posting_file:
+    #     :param inverted_idx:
+    #     '''
+    #     if inverted_idx is not None:
+    #         j=json.dumps(inverted_idx)
+    #     else:
+    #         j =json.dumps(self.inverted_idx)
+    #     with open('inverted_dic_file_'+str(idx)+'.json','w') as f:
+    #         f.write(j)
+    #         f.close()
+    #     # j =json.dumps(self.posting_file.posting_file_to_json())
+    #     if posting_file is not None:
+    #         j = json.dumps(posting_file.posting_file_to_json())
+    #     else:
+    #         j = json.dumps(self.posting_file.posting_file_to_json())
+    #
+    #     with open('posting_file_' + str(idx) + '.json', 'w') as f:
+    #         f.write(j)
+    #         f.close()
+    # def write_posting_file_to_disk(self, idx):
+    #     '''
+    #     write posting file to disk
+    #     :param idx: offset of the posting file
+    #     '''
+    #     j = json.dumps(self.posting_file.posting_file_to_json())
+    #     with open('posting_file_' + str(idx) + '.json', 'w') as f:
+    #         f.write(j)
+    #         f.close()
+    # def write_inverted_index_to_disk(self,idx,inverted_index):
+    #     path = os.path.dirname(os.path.abspath(__file__))
+    #     if not os.path.exists(path+'\\inverted_index'):
+    #         os.mkdir(path+'\\inverted_index')
+    #     path = os.path.dirname(os.path.abspath(__file__))+'\\inverted_index\\'
+    #     j =json.dumps(inverted_index)
+    #     with open(path+'\\inverted_dic_file_'+str(idx)+'.json','w') as f:
+    #         f.write(j)
+    #         f.close()
+    #     self.inverted_idx.clear()
+    #     self.inverted_idx={}
+    #
+    # def open_sub_dic_inverted_index(self, idx):
+    #     '''
+    #     open sub dictionary of inverted dictionary
+    #     :param idx: offset of the sub dictionary
+    #     :return:
+    #     '''
+    #     with open('inverted_dic_file_' + str(idx) + '.json') as json_file:
+    #         data = json.load(json_file)
+    #         return data
+    # '''
     
-    
-    
-    def merge_sub_dic_inverted_index(self, idx_origin, idx_aim):
-        
-        merge sub dic inverted index and posting file
-        :param idx_origin: offset of origin dictionary
-        :param idx_aim: offset of aim dictionary
-        :return:
-        dic_idx_origin = self.open_sub_dic_inverted_index(idx_origin)
-        posting_file_origin = self.posting_file.open_posting_file(idx_origin)
-        dic_idx_aim = self.open_sub_dic_inverted_index(idx_aim)
-        posting_file_aim = self.posting_file.open_posting_file(idx_aim)
-        items_origin = dic_idx_origin.items()
-        keys_aim = dic_idx_aim.keys()
-        for key, value in items_origin:
-            if key in keys_aim:
-                if key=="19":
-                    print("")
-                dic_idx_aim[key]['frequency_show_term'] += dic_idx_origin[key]['frequency_show_term']
-                pointer = dic_idx_aim[key]['posting_pointer']
-                temp = dic_idx_origin[key]['posting_pointer']
-                posting_file_aim[pointer].extend(posting_file_origin[dic_idx_origin[key]['posting_pointer']])
-            else:
-                dic_idx_aim[key] = {}
-                dic_idx_aim[key]['frequency_show_term'] = dic_idx_origin[key]['frequency_show_term']
-                dic_idx_aim[key]['posting_pointer'] = dic_idx_origin[key]['posting_pointer']
-                pointer = dic_idx_origin[key]['posting_pointer']
-                temp_1 = posting_file_origin[pointer]
-                posting_file_aim[pointer] = posting_file_origin[pointer]
-                temp_1 = posting_file_aim[pointer]
-
-        dic_idx_aim = self.sort_dictionary_by_key(dic_idx_aim)
-        self.posting_file.posting_file_dictionary = posting_file_aim
-        posting_file_aim = self.posting_file.sort_posting_file()
-        self.inverted_idx = dic_idx_aim
-        self.posting_file.posting_file_dictionary = posting_file_aim
-        return PostingFile(posting_file_aim), dic_idx_aim
-    '''
-    def sort_posting_file_by_abc(self):
-        '''
-        split the posting file to a'b'c
-        '''
-        items_inverted_idx = self.inverted_idx.items()
-        sorted_posting_file_hashtag = {}
-        a_k = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']
-        l_z = ['l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-        sorted_posting_file_a_k = {}
-        sorted_posting_file_l_z = {}
-        for key, value in items_inverted_idx:
-            posting_id = self.inverted_idx[key]['posting_pointer']
-            first_letter = key[0].lower()
-            if first_letter in a_k:
-                sorted_posting_file_a_k[posting_id] = self.posting_file.posting_file_dictionary[posting_id]
-            elif first_letter in l_z:
-                sorted_posting_file_l_z[posting_id] = self.posting_file.posting_file_dictionary[posting_id]
-            else:
-                sorted_posting_file_hashtag[posting_id] = self.posting_file.posting_file_dictionary[posting_id]
-        self.posting_file.posting_file_dictionary = sorted_posting_file_hashtag
-        self.write_posting_file_to_disk("hash")
-        self.posting_file.posting_file_dictionary = sorted_posting_file_a_k
-        self.write_posting_file_to_disk("a_k")
-        self.posting_file.posting_file_dictionary = sorted_posting_file_l_z
-        self.write_posting_file_to_disk("l_z")
-    def merge_all_posting_and_inverted_idx(self):
-        '''
-        build the posting file and the inverted index step by step like a tournament
-        '''
-        path =  "C:\\Users\\HEN\\PycharmProjects\\Search_Engine_Project"
-        files = []
-        has_files_to_merge = True
-        is_merge = False
-        counter=0
-        while has_files_to_merge:
-            files_in_path =os.listdir(path)
-            count=0
-            for i in files_in_path:
-                if re.match('posting_file_',i):
-                    file = re.findall("\d+", i)[0]
-                    files.append(file)
-                    counter+=1
-            max_size = int(max(files))+1
-            even =True
-            if len(files) %2==1:
-                even=False
-            if len(files) >1:
-                is_merge = True
-                for i in range(0,len(files),2):
-                    if i+1 == len(files) and not even:
-                        continue
-                    posting_file_aim,dic_idx_aim = self.merge_sub_dic_inverted_index(files[i],files[i+1])
-                    os.remove(path+"\\posting_file_"+files[i]+".json")
-                    os.remove(path+"\\inverted_dic_file_"+files[i]+".json")
-                    os.remove(path+"\\posting_file_"+files[i+1]+".json")
-                    os.remove(path+"\\inverted_dic_file_"+files[i+1]+".json")
-                    self.write_to_disk(max_size,posting_file=posting_file_aim,inverted_idx=dic_idx_aim)
-                    max_size+=1
-                files = []
-            else:
-                has_files_to_merge=False
-        if is_merge:
-            self.inverted_idx=dic_idx_aim
-            return dic_idx_aim,max_size-1
-        return self.inverted_idx,max_size-1
-
-
-
+    #
+    #
+    # def merge_sub_dic_inverted_index(self, idx_origin, idx_aim):
+    #
+    #     merge sub dic inverted index and posting file
+    #     :param idx_origin: offset of origin dictionary
+    #     :param idx_aim: offset of aim dictionary
+    #     :return:
+    #     dic_idx_origin = self.open_sub_dic_inverted_index(idx_origin)
+    #     posting_file_origin = self.posting_file.open_posting_file(idx_origin)
+    #     dic_idx_aim = self.open_sub_dic_inverted_index(idx_aim)
+    #     posting_file_aim = self.posting_file.open_posting_file(idx_aim)
+    #     items_origin = dic_idx_origin.items()
+    #     keys_aim = dic_idx_aim.keys()
+    #     for key, value in items_origin:
+    #         if key in keys_aim:
+    #             if key=="19":
+    #                 print("")
+    #             dic_idx_aim[key]['frequency_show_term'] += dic_idx_origin[key]['frequency_show_term']
+    #             pointer = dic_idx_aim[key]['posting_pointer']
+    #             temp = dic_idx_origin[key]['posting_pointer']
+    #             posting_file_aim[pointer].extend(posting_file_origin[dic_idx_origin[key]['posting_pointer']])
+    #         else:
+    #             dic_idx_aim[key] = {}
+    #             dic_idx_aim[key]['frequency_show_term'] = dic_idx_origin[key]['frequency_show_term']
+    #             dic_idx_aim[key]['posting_pointer'] = dic_idx_origin[key]['posting_pointer']
+    #             pointer = dic_idx_origin[key]['posting_pointer']
+    #             temp_1 = posting_file_origin[pointer]
+    #             posting_file_aim[pointer] = posting_file_origin[pointer]
+    #             temp_1 = posting_file_aim[pointer]
+    #
+    #     dic_idx_aim = self.sort_dictionary_by_key(dic_idx_aim)
+    #     self.posting_file.posting_file_dictionary = posting_file_aim
+    #     posting_file_aim = self.posting_file.sort_posting_file()
+    #     self.inverted_idx = dic_idx_aim
+    #     self.posting_file.posting_file_dictionary = posting_file_aim
+    #     return PostingFile(posting_file_aim), dic_idx_aim
+    # '''
+    # def sort_posting_file_by_abc(self):
+    #     '''
+    #     split the posting file to a'b'c
+    #     '''
+    #     items_inverted_idx = self.inverted_idx.items()
+    #     sorted_posting_file_hashtag = {}
+    #     a_k = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']
+    #     l_z = ['l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+    #     sorted_posting_file_a_k = {}
+    #     sorted_posting_file_l_z = {}
+    #     for key, value in items_inverted_idx:
+    #         posting_id = self.inverted_idx[key]['posting_pointer']
+    #         first_letter = key[0].lower()
+    #         if first_letter in a_k:
+    #             sorted_posting_file_a_k[posting_id] = self.posting_file.posting_file_dictionary[posting_id]
+    #         elif first_letter in l_z:
+    #             sorted_posting_file_l_z[posting_id] = self.posting_file.posting_file_dictionary[posting_id]
+    #         else:
+    #             sorted_posting_file_hashtag[posting_id] = self.posting_file.posting_file_dictionary[posting_id]
+    #     self.posting_file.posting_file_dictionary = sorted_posting_file_hashtag
+    #     self.write_posting_file_to_disk("hash")
+    #     self.posting_file.posting_file_dictionary = sorted_posting_file_a_k
+    #     self.write_posting_file_to_disk("a_k")
+    #     self.posting_file.posting_file_dictionary = sorted_posting_file_l_z
+    #     self.write_posting_file_to_disk("l_z")
+    # def merge_all_posting_and_inverted_idx(self):
+    #     '''
+    #     build the posting file and the inverted index step by step like a tournament
+    #     '''
+    #     path =  "C:\\Users\\HEN\\PycharmProjects\\Search_Engine_Project"
+    #     files = []
+    #     has_files_to_merge = True
+    #     is_merge = False
+    #     counter=0
+    #     while has_files_to_merge:
+    #         files_in_path =os.listdir(path)
+    #         count=0
+    #         for i in files_in_path:
+    #             if re.match('posting_file_',i):
+    #                 file = re.findall("\d+", i)[0]
+    #                 files.append(file)
+    #                 counter+=1
+    #         max_size = int(max(files))+1
+    #         even =True
+    #         if len(files) %2==1:
+    #             even=False
+    #         if len(files) >1:
+    #             is_merge = True
+    #             for i in range(0,len(files),2):
+    #                 if i+1 == len(files) and not even:
+    #                     continue
+    #                 posting_file_aim,dic_idx_aim = self.merge_sub_dic_inverted_index(files[i],files[i+1])
+    #                 os.remove(path+"\\posting_file_"+files[i]+".json")
+    #                 os.remove(path+"\\inverted_dic_file_"+files[i]+".json")
+    #                 os.remove(path+"\\posting_file_"+files[i+1]+".json")
+    #                 os.remove(path+"\\inverted_dic_file_"+files[i+1]+".json")
+    #                 self.write_to_disk(max_size,posting_file=posting_file_aim,inverted_idx=dic_idx_aim)
+    #                 max_size+=1
+    #             files = []
+    #         else:
+    #             has_files_to_merge=False
+    #     if is_merge:
+    #         self.inverted_idx=dic_idx_aim
+    #         return dic_idx_aim,max_size-1
+    #     return self.inverted_idx,max_size-1
+    #
+    #
+    #
 
 
 

@@ -22,6 +22,13 @@ class Parse:
         :param text:
         :return:
         """
+        # text= re.sub(r'http\S+|www.\S+', '', 'www.ynet.co.il')
+        # print(text)
+        # text = "6 9 0 7a ❶ ³"
+        # text = "http://rssfeeds.freep.com/~/629855571/0/freep/sports~Jim-Harbaugh-knows-this-If-his-players-can-wear-a-mask-so-can-you/?utm_campaign=snd-autopilot"
+        text = "::)) http://www.google.com/~NPL/# … |____-__||  #_stay_At_Home #stay_at_home #TrumpIsANation hello… there:) whatsup:P 'covid 19' covid'19 Donald Trump fights Covid 19 and COVID 19 and I thank him"
+        # text = "https://www.twitter.com 100⁰ # \ | @ ! $ % ^ & * ( ) ` ~ + = _ \ ' | : ; / ? . , } { ] [ https://  3.63 million say “not at all.” I walked in corona the Corona in Corona  covid-19 streed. COVID-19 and he found 10 million dollar for 6 percent"
+        # text = "€£💐🔃🙏🏻❤⬇🐮💗，🎊🎁🎉🎈🍸‘🤦🏻‍♀🕯🙏🏼🔹€4️⃣🐣👍🏼🍰🚨💥🇺🇸🚫✅❗️👇⁦👏⁩“”⚠🇦🇷‼😭😩😪🤬🤡😷😁😳😂😢🤣⑥²⁸¹❶❷❽②⑦&$.,!?,…:;^ Meet walked Donald Trump in Y'all Tom the streed and he found 10 million dollar for 6 percent https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
         self.array_names_and_entities = {}
         self.dictionary_index = {}
         text = text.replace("\n", ". ")
@@ -36,9 +43,10 @@ class Parse:
             ans = ""
             if word == '' or word == ' ': continue
             check_digit = self.isdigit(word)
-            if (len(word) < 2 and check_digit is False) or self.is_ascii(word) is False:
+            if len(word) < 2 or self.is_ascii(word) is False:
                 word = self.remove_panctuation(word)
-                if self.is_ascii(word) is False or word == '' or word == " " or len(word)<2 or word.lower() not in self.stop_words:
+                if self.is_ascii(word) is False or word == '' or word == " " or len(
+                        word) < 2 or word.lower() not in self.stop_words:
                     continue
             if ans == "" and self.is_url(word):
                 entities_url.append(word)
@@ -64,12 +72,13 @@ class Parse:
                                                                                len(string_ans) + len(word):] + " "
                 else:
                     ans = word
-            elif ans == "" and (
-                    word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(word.lstrip('-'))):
+            elif ans == "" and (word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(
+                    word.lstrip('-')) or word.replace('~', '').isdigit()):
                 ans = self.convert_str_to_number(array_text_space, idx)
             if ans == "":
                 pre_ans = self.remove_panctuation(word)
-                array_ans = pre_ans.split()##############################################stay_at_home array
+                if len(pre_ans) < 2: continue
+                array_ans = pre_ans.split()
                 for word_array in array_ans:
                     if word_array.lower() in self.stop_words: continue
                     string_ans += self.add_to_dictionary(word_array.lower(), string_ans_index)
@@ -80,7 +89,7 @@ class Parse:
 
         self.get_name_and_entities(entities_url, array_text_space)
         array_parsed = string_ans.split()
-        return array_parsed,self.array_names_and_entities
+        return array_parsed, self.array_names_and_entities
 
     def separate_words_with_dots(self, array_text):
         new_text = ""
@@ -150,22 +159,28 @@ class Parse:
         return an array of the components
         """
         if string is not None:
-            r = re.split('[/://?=-]', string)
-            ans = " ".join(r).lstrip()
-            ans = re.sub(r"http\S+", "", ans)
-            ans = self.remove_panctuation(ans)
-
-            ans = "".join(ans).strip().split()
+            ans = string.split("/")
+            #r = re.split('[/://?=-]', string)
+            #ans = " ".join(r).lstrip()
+            #for term in ans:
+           #     term = re.sub(r"http\S+", "", ans)
+            #ans = "".join(ans).strip().split()
             ans_len = len(ans)
+            remove_www = ""
             if ans_len > 0:
-                remove_www = ans[0].replace("www.", "")
+                for term in ans:
+                    remove_www += term.replace("www.", "") + " "
                 ans[0] = ans[0].replace(ans[0], remove_www)
                 string_without_stopword = ""
                 length = range(len(ans))
-                for word, idx in zip(ans, length):
-                    if word in self.stop_words or word.isnumeric():
-                        continue
-                    string_without_stopword += word + " "
+                ans_string = ans[0].split(" ")
+                for word, idx in zip(ans_string, length):
+                    if word == '' or word == ' ': continue
+                    if len(word) < 2 or (len(word) > 0 and word[0] == '#'): continue
+                    if word not in self.stop_words or word.isnumeric():
+                        if not self.is_url(word):
+                            word = self.remove_panctuation(word)
+                        string_without_stopword += word + " "
                 return string_without_stopword.lstrip()
             else:
                 return ""
@@ -283,7 +298,10 @@ class Parse:
             else:
                 text_return.append(number_numerize)
             if 1900 < number < 2100 and help_minus == '':
-                text_return.append(text_demo[idx])
+                if '~' in text_demo[idx]:
+                    text_return.append(my_word)
+                else:
+                    text_return.append(text_demo[idx])
         return help_minus + ' '.join(text_return)
 
     def ignore_emojis(self, text):
@@ -336,7 +354,7 @@ class Parse:
         smiles = [":)", ":(", ":-]", ":-)", ";)", ";-)", ":-(", ";(", ";-(", ":-P", ":P", ":p", ":-p"]
         for smile in smiles:
             if smile in word: word = word.replace(smile, "")
-        if word in smiles: return word
+        if word in smiles: return ''
         if "\n" in word: word = word.replace("\n", " ")
         if '#' in word and word[0] != '#': word = word.replace("#", "")
         if '_' in word and '#' not in word:
@@ -345,13 +363,13 @@ class Parse:
 
         word = word.replace("-", " ")
         word = word.replace("'", "")
-        word = re.sub(r'[€£€4️⃣“”‘⁦⁩‼⑥²⁸¹❶❷❽②⑦&$~’.,!…|?,…:;^"{}=+()⁰\/[\[\]]', '', word)
+        word = re.sub(r'[€£€4️⃣“”‘⁦⁩‼⑥²⁸¹❶❷❽②⑦&$~’.,!…|?,…:;^"{}*=+()⁰\/[\[\]]', '', word)
         return word
 
     def get_name_and_entities(self, entities_url, array_text_space):
         text = ""
         for word in array_text_space:
-            if word == '' or word == '' or word[0] =='@' or word[0] == '#' or word =="RT": continue
+            if word == '' or word == '' or word[0] == '@' or word[0] == '#' or word == "RT": continue
             text += word + " "
 
         rx2 = re.compile(r'[A-Z][-a-zA-Z]+[1-9]*(?:\s+[A-Z][-a-zA-Z]+[1-9]*)*')
@@ -359,7 +377,7 @@ class Parse:
         tokinzed_entity_new = set()
         i = 0
         for i in range(len(matches)):
-            if len(str(matches[i]).split()) >1:
+            if len(str(matches[i]).split()) > 1:
                 tokinzed_entity_new.add(str(matches[i]))
                 i += 1
         if "COVID 19" in text: tokinzed_entity_new.add("COVID 19")
@@ -392,9 +410,9 @@ class Parse:
         entities_local_dict = {}
         array_url_parsed = []
         url = str(url)
-        rt=False
+        rt = False
         if "RT" in full_text:
-            rt=True
+            rt = True
         if url != "{}" and "null" not in url:
             dict2 = eval(url)
             keys = dict2.keys()
@@ -405,10 +423,11 @@ class Parse:
                     for word in check:
                         array_url_parsed.append(word)
 
-        tokenized_text,names_and_entities = self.parse_sentence(full_text, stemmer=False)
+        tokenized_text, names_and_entities = self.parse_sentence(full_text, stemmer=False)
         doc_length = len(tokenized_text)  # after text operations.
-        if doc_length==0:
+        if doc_length == 0:
             return None
+
         for term in tokenized_text:
             if term not in term_dict.keys():
                 term_dict[term] = 1

@@ -5,6 +5,7 @@ from indexer import Indexer
 from searcher import Searcher
 import utils
 import timeit
+from global_method import GlobalMethod
 
 import datetime
 
@@ -24,13 +25,16 @@ def run_engine():
     check=0
     check2=0
     parsed_doc_list = list()
-    indexer.split_posting_file_and_create_inverted_index()
-    indexer.write_inverted_index_to_txt_file()
-    dic={}
+    # indexer.split_posting_file_and_create_inverted_index()
+    # indexer.merge_two_last_posting_file()
+    # indexer.create_matrix_global_method()
+    # indexer.write_inverted_index_to_txt_file()
+    # dic={}
     dic= indexer.load_inverted_index_to_dictionary_online()
+    gl=GlobalMethod(indexer)
     print(dic.keys())
-    dic = Indexer.load_inverted_index_to_dictionary_offline()
-    print(dic.keys())
+    # dic = Indexer.load_inverted_index_to_dictionary_offline()
+    # print(dic.keys())
 
 
     # print("start :" ,datetime.datetime.now())
@@ -66,7 +70,8 @@ def run_engine():
                 print("@@start to merge@@")
                 indexer.merge_posting_file_round2()
                 indexer.merge_two_last_posting_file()
-                # indexer.split_posting_file_and_create_inverted_index()
+                indexer.split_posting_file_and_create_inverted_index()
+                indexer.write_inverted_index_to_txt_file()
                 print("end merge :", datetime.datetime.now())
 
 

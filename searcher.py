@@ -1,13 +1,9 @@
 from parser_module import Parse
 from ranker import Ranker
-import utils
-import json
-import indexer
+from indexer import Indexer
 import math
-import pandas as pd
 import numpy as np
-import copy
-import os
+
 
 
 class Searcher:
@@ -19,7 +15,7 @@ class Searcher:
         self.parser = Parse()
         self.ranker = Ranker()
         self.inverted_index = inverted_index
-
+        #self.indexer=Indexer
     # #def relevant_docs_from_posting_old(self, query_tuple):
     #     """
     #     This function loads the posting list and count the amount of relevant documents per term.
@@ -109,7 +105,9 @@ class Searcher:
             if str(term).upper() not in query: query.append(str(term).upper())
         for term in query:
             if term == '' or term == ' ': continue
-            dic_tweets = indexer.Indexer.get_values_of_dictionary_term(term,term[0])
+            dic_tweets = Indexer.get_values_in_posting_file_of_dictionary_term(inverted, term ,str(term[0]).upper())
+            if len(dic_tweets) == 0: continue
+            #Indexer.get_values_in_posting_file_of_dictionary_term(inverted, term ,str(term[0]).upper())
             #posting = indexer.Indexer.get_details_about_term_in_inverted_index(term)
             # try:
             #     inverted_list_ans.append(inverted[term]["pt"])
@@ -118,21 +116,22 @@ class Searcher:
             list_terms = []
             #dic_tweets = json.loads(posting[inverted_list_ans[index]])
             for tweet in dic_tweets:
-                tf_idf = float(tweet["tf"]) * float(inverted[term]["idf"])
-                if tweet["tweet_id"] not in dict_tweet_tfidf:
+                tf_idf = float(dic_tweets[tweet]["tf"]) * float(inverted[term]["idf"])
+                if tweet not in dict_tweet_tfidf:
                     dict_term_tfidf = {}
                     for term_inner in query:
                         dict_term_tfidf[term_inner] = float(0)
                     list_terms.append(dict_term_tfidf)
-                    dict_tweet_tfidf[tweet["tweet_id"]] = list_terms
+                    dict_tweet_tfidf[tweet] = list_terms
                     list_terms[0][term] = tf_idf
-                    dict_tweet_tfidf[tweet["tweet_id"]] = list(list_terms)
+                    dict_tweet_tfidf[tweet] = list(list_terms)
                 else:
-                    exist_list = list(dict_tweet_tfidf[tweet["tweet_id"]])
+                    exist_list = list(dict_tweet_tfidf[tweet])
                     for dict_list in exist_list:
                         dict_list[term] += tf_idf
                 list_terms.clear()
             index += 1
+            dic_tweets.clear()
         dict_query = {}
         for term in query:
             if term not in dict_query.keys(): dict_query[term] = 1

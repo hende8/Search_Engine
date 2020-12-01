@@ -1,3 +1,5 @@
+import os
+
 from reader import ReadFile
 from configuration import ConfigClass
 from parser_module import Parse
@@ -25,7 +27,7 @@ def run_engine():
     parsed_doc_list = list()
 
     for i in range(0,length_of_array):
-        if i ==10 or check2==11:
+        if i ==2 or check2==11:
             break
         print(datetime.datetime.now())
         documents_list = r.get_documents(pathes[i][0],pathes[i][0])
@@ -50,7 +52,7 @@ def run_engine():
                 check2 += 1
                 parsed_doc_list.clear()
                 parsed_doc_list=list()
-                if check2==10:
+                if check2==2:
                     start3 = timeit.default_timer()
                     indexer.merge_posting_files()
                     indexer.split_posting_file_and_create_inverted_index()
@@ -58,6 +60,8 @@ def run_engine():
                     print('total time to merge 400K of docs', (stop3 - start3) / 60, "round number :", i)
                     check2+=1
                     break
+        indexer.write_inverted_index_to_txt_file()
+        break
     stop3 = timeit.default_timer()
     print('total 200K of docs time to parse and write txt file', (stop3 - start3) / 60, "round number :", i)
     # start3 = timeit.default_timer()
@@ -127,7 +131,9 @@ def run_engine():
 
 def load_index():
     print('Load inverted index')
-    inverted_index = utils.load_obj("inverted_idx")
+    path = os.path.dirname(os.path.abspath(__file__))
+    inverted_index = open(path + "\\inverted_index_dic.txt", "w")
+    #inverted_index = utils.load_obj("inverted_index_dic")
     return inverted_index
 
 
@@ -135,8 +141,8 @@ def search_and_rank_query(query, inverted_index, k):
     p = Parse()
     query_as_list = p.parse_sentence(query)
     searcher = Searcher(inverted_index)
-    searcher.ranker.global_method_matrix(inverted_index)
-    relevant_docs = searcher.relevant_docs_from_posting(query_as_list)
+    #searcher.ranker.global_method_matrix(inverted_index)
+    relevant_docs = searcher.relevant_docs_from_posting(query_as_list, inverted=inverted_index)
     ranked_docs = searcher.ranker.rank_relevant_doc(relevant_docs)
     return searcher.ranker.retrieve_top_k(ranked_docs, k)
 

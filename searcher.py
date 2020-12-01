@@ -105,7 +105,7 @@ class Searcher:
             if str(term).upper() not in query: query.append(str(term).upper())
         for term in query:
             if term == '' or term == ' ': continue
-            dic_tweets = Indexer.get_values_in_posting_file_of_dictionary_term(inverted, term ,str(term[0]).upper())
+            dic_tweets = Indexer.get_values_in_posting_file_of_dictionary_term(term, str(term[0]).upper())
             if len(dic_tweets) == 0: continue
             #Indexer.get_values_in_posting_file_of_dictionary_term(inverted, term ,str(term[0]).upper())
             #posting = indexer.Indexer.get_details_about_term_in_inverted_index(term)
@@ -115,6 +115,7 @@ class Searcher:
             #     continue
             list_terms = []
             #dic_tweets = json.loads(posting[inverted_list_ans[index]])
+
             for tweet in dic_tweets:
                 tf_idf = float(dic_tweets[tweet]["tf"]) * float(inverted[term]["idf"])
                 if tweet not in dict_tweet_tfidf:
@@ -138,23 +139,30 @@ class Searcher:
             else: dict_query[term] += 1
 
         numpy_array_query = np.array(list(dict_query.values()))
-        sum_pows_query = 0
-        for values in dict_query.values():
-            sum_pows_query += values*values
-        dist_query = math.sqrt(sum_pows_query)
-        dict_cossine_tweet ={}
-        index = 0
-        sum_pows_doc = 0
+        # sum_pows_query = 0
+        # for values in dict_query.values():
+        #     sum_pows_query += values*values
+        #dist_query = math.sqrt(sum_pows_query)
+        # dict_cossine_tweet ={}
+        # index = 0
+        # sum_pows_doc = 0
+        # for list_values in dict_tweet_tfidf.values():
+        #     for values in list_values[0].values():
+        #         sum_pows_doc += values * values
+        #     dist_doc = math.sqrt(sum_pows_doc)
+        #     numpy_array_doc = np.array(list(list_values[0].values()))
+        #     multiply_vectors = np.dot(numpy_array_query, numpy_array_doc)
+        #     cosine_sim = multiply_vectors / (dist_query*dist_doc)
+        #     dict_cossine_tweet[list(dict_tweet_tfidf.keys())[index]] = cosine_sim
+        #     index += 1
+
+        dict_inner_product = {}
         for list_values in dict_tweet_tfidf.values():
-            for values in list_values[0].values():
-                sum_pows_doc += values * values
-            dist_doc = math.sqrt(sum_pows_doc)
             numpy_array_doc = np.array(list(list_values[0].values()))
             multiply_vectors = np.dot(numpy_array_query, numpy_array_doc)
-            cosine_sim = multiply_vectors / (dist_query*dist_doc)
-            dict_cossine_tweet[list(dict_tweet_tfidf.keys())[index]] = cosine_sim
+            dict_inner_product[list(dict_tweet_tfidf.keys())[index]] = multiply_vectors
             index += 1
-        return dict_cossine_tweet
+        return dict_inner_product
 
     def expand_query(self):
         self.ranker.global_method_matrix(self.inverted_index)

@@ -448,7 +448,7 @@ class Indexer:
         return inverted_index
 
     @staticmethod
-    def get_details_about_term_in_posting_file(inverted, line):
+    def get_details_about_term_in_posting_file(line):
         details_dic = {}
         splited_line = str(line).split(",")
         for i in splited_line:
@@ -469,12 +469,10 @@ class Indexer:
             dic["pt"] = self.inverted_index[term]["pt"]
             return dic
         return dic
-    @staticmethod
-    def printstam():
-        print("fffff")
+
 
     @staticmethod
-    def get_values_in_posting_file_of_dictionary_term(inverted, term, pointer):
+    def get_values_in_posting_file_of_dictionary_term(term, pointer):
         path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
         file = open(path + str(pointer) + ".txt", "r")
         line_small = file.readline()
@@ -484,22 +482,11 @@ class Indexer:
             term_ = splited_line[0]
             if term_ == term:
                 file.close()
-                val = splited_line[1]
-                #Indexer.printstam()
-                #dic_details =self.get_details_about_term_in_inverted_index_try(term_)
-                dic_details = Indexer.get_details_about_term_in_posting_file(inverted, val)
+                dic_details = Indexer.get_details_about_term_in_posting_file(splited_line[1])
                 break
             line_small = file.readline()
         file.close()
         return dic_details
-        # with file as fp_small:
-        #     line_small = fp_small.readline()
-        #     splited_line = line_small.split(":")
-        #     term_=splited_line[0]
-        #     if term_==term:
-        #         return self.get_details_about_term_in_posting_file(splited_line[1])
-        # file.close()
-
 
     @staticmethod
     def load_inverted_index_to_dictionary_offline():

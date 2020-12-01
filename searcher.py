@@ -7,6 +7,7 @@ import math
 import pandas as pd
 import numpy as np
 import copy
+from global_method import GlobalMethod
 
 
 class Searcher:
@@ -18,69 +19,8 @@ class Searcher:
         self.parser = Parse()
         self.ranker = Ranker()
         self.inverted_index = inverted_index
+        self.global_method_matrix=GlobalMethod(self.inverted_index)
 
-    def relevant_docs_from_posting_old(self, query_tuple):
-        """
-        This function loads the posting list and count the amount of relevant documents per term.
-        :param query: query
-        :return: dictionary of relevant documents.
-        """
-        # with open('posting_file_18.json') as json_file:
-        #     posting = json.load(json_file)
-        # with open('inverted_dic_file_2.json') as json_file:
-        #     inverted = json.load(json_file)
-        # posting = utils.load_obj("posting")
-        inverted = self.inverted_index
-        inverted_list_ans = []
-        dict_tf = {}
-        dict_idf = {}
-        index = 0
-        query = []
-        for term in query_tuple[0]:
-            if str(term) not in query: query.append(term)
-            if str(term).lower() not in query: query.append(str(term).lower())
-            if str(term).upper() not in query: query.append(str(term).upper())
-        for term in query_tuple[1]:
-            if str(term) not in query: query.append(term)
-            if str(term).lower() not in query: query.append(str(term).lower())
-            if str(term).upper() not in query: query.append(str(term).upper())
-        if str(query).lstrip() == "" or str(query).lstrip() == '': return None
-        for term in query:
-            if term == '' or term == ' ': continue
-            first_letter = term[0]
-            if 'a' <= first_letter <= 'k' or 'A' <= first_letter <= 'K':
-                with open('posting_file_a_k.json') as json_file:
-                    posting = json.load(json_file)
-            elif 'l' <= first_letter <= 'z' or 'L' <= first_letter <= 'Z':
-                with open('posting_file_l_z.json') as json_file:
-                    posting = json.load(json_file)
-            else:
-                with open('posting_file_hash.json') as json_file:
-                    posting = json.load(json_file)
-            try:
-                inverted_list_ans.append(inverted[term]["posting_pointer"])
-                dict_idf[term] = float(inverted[term]["idf"])
-            except:
-                continue
-            dic_tweets = json.loads(posting[inverted_list_ans[index]])
-            for tweet in dic_tweets:
-                if tweet["tweet_id"] in dict_tf:
-                    dict_tf[tweet["tweet_id"]] += float(tweet["tf"])
-                else:
-                    dict_tf[tweet["tweet_id"]] = float(tweet["tf"])
-            index += 1
-        dict_tfidf = {}
-        previus_tfidf = 0
-        for term in dict_tf:
-            for word in dict_idf:
-                value_tf = float(dict_tf[term])
-                value_idf = float(dict_idf[word])
-                multiply = float(value_idf * value_tf)
-                dict_tfidf[term] = float(multiply) + previus_tfidf
-                previus_tfidf = float(multiply)
-            previus_tfidf = 0
-        if term.lstrip() == '' or term.lstrip() == ' ': return None
-        return dict_tfidf
 
     def relevant_docs_from_posting(self, query_tuple):
         """

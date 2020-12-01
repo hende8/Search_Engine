@@ -23,48 +23,73 @@ def run_engine():
     check=0
     check2=0
     parsed_doc_list = list()
-
+    print("start :" ,datetime.datetime.now())
+    delta=0
     for i in range(0,length_of_array):
-        if i ==10 or check2==11:
-            break
-        print(datetime.datetime.now())
+        if i == length_of_array - 1:
+            documents_list = r.get_documents(pathes[i][0], pathes[i][0])
+            for doc in documents_list:
+                parsed_document = p.parse_doc(doc)
+                if parsed_document == None:
+                    continue
+                parsed_doc_list.append(parsed_document)
+                number_of_documents += 1
+                if number_of_documents%200000==0:
+                    print(datetime.datetime.now())
+                    print("finish to parse 200K docs...")
+                    for doc in parsed_doc_list:
+                        indexer.add_new_doc(doc)
+                    indexer.write_posting_file_to_txt_file(check2)
+                    check2 += 1
+                    parsed_doc_list.clear()
+                    parsed_doc_list=list()
+                    print("start last docs before merge")
+            print(datetime.datetime.now())
+            print("finish!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            for doc in parsed_doc_list:
+                indexer.add_new_doc(doc)
+            print(datetime.datetime.now())
+            print("start writing last index to disk after sherit...")
+            indexer.write_posting_file_to_txt_file(check2)
+            check2 += 1
+            indexer.merge_posting_files()
+            indexer.split_posting_file_and_create_inverted_index()
+            indexer.write_inverted_index_to_txt_file()
+            indexer.load_inverted_index_to_dictionary_online()
+            # indexer.create_matrix_global_method()
+            parsed_doc_list.clear()
+            parsed_doc_list = list()
+            print("END :", datetime.datetime.now())
         documents_list = r.get_documents(pathes[i][0],pathes[i][0])
-        start3 = timeit.default_timer()
         for document in documents_list:
             parsed_document = p.parse_doc(document)
-            check+=1
             if parsed_document ==None:
                 continue
             number_of_documents += 1
+            # if number_of_documents%20000==0:
+            #     print(number_of_documents)
             parsed_doc_list.append(parsed_document)
-            if number_of_documents%1000==0:
-                stop3 = timeit.default_timer()
-                print('total 200K of docs time to parse', (stop3 - start3) / 60, "round number :", i,i + 1)
+            if number_of_documents%200000==0:
                 print(datetime.datetime.now())
+                print("finish to parse 200K docs...")
                 for doc in parsed_doc_list:
                     indexer.add_new_doc(doc)
-                print("start writing and finish to add docs to post dictionary ", number_of_documents)
                 print(datetime.datetime.now())
+                print("start to write 200K docs to disk...")
                 indexer.write_posting_file_to_txt_file(check2)
+                print("finish to write 200K docs to disk...")
                 print(datetime.datetime.now())
                 check2 += 1
+                # if check2==4:
+                #     print("start to merge...")
+                #     indexer.merge_posting_files()
+                #     indexer.split_posting_file_and_create_inverted_index()
+                #     indexer.write_inverted_index_to_txt_file()
+                #     indexer.load_inverted_index_to_dictionary_online()
                 parsed_doc_list.clear()
                 parsed_doc_list=list()
-                if check2==10:
-                    start3 = timeit.default_timer()
-                    indexer.merge_posting_files()
-                    indexer.split_posting_file_and_create_inverted_index()
-                    stop3 = timeit.default_timer()
-                    print('total time to merge 400K of docs', (stop3 - start3) / 60, "round number :", i)
-                    check2+=1
-                    break
-    stop3 = timeit.default_timer()
-    print('total 200K of docs time to parse and write txt file', (stop3 - start3) / 60, "round number :", i)
-    # start3 = timeit.default_timer()
-    # indexer.merge_posting_files()
-    # stop3 = timeit.default_timer()
-    # print('total time to merge 400K of docs', (stop3 - start3) / 60, "round number :", i, i + 1)
-
+    print(datetime.datetime.now())
+    print("END :", datetime.datetime.now())
 
     # stop = timeit.default_timer()
     # print(datetime.datetime.now())
@@ -127,7 +152,7 @@ def run_engine():
 
 def load_index():
     print('Load inverted index')
-    inverted_index = utils.load_obj("inverted_idx")
+    inverted_index = Indexer.load_inverted_index_to_dictionary_offline()
     return inverted_index
 
 

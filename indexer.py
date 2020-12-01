@@ -1,7 +1,8 @@
 from collections import OrderedDict
-from posting_file import PostingFile
+from global_method import GlobalMethod
 import math
 import os
+import datetime
 from ranker import Ranker
 
 class Indexer:
@@ -11,18 +12,7 @@ class Indexer:
 
         :param config: configuration file
         '''
-        self.inverted_idx = {}
-        self.config = config
-        self.posting_file = PostingFile()
-        self.sub_dic_posting_file_idx=0
-        self.dic_max_tf_and_uniqueness ={}
-        self.idx_inverted_dic=0
-        self.number_of_documents_clear_memory=0
-        self.ranker =Ranker()
-        self.counter_round2=0
-
-
-
+        self.inverted_idx={}
         self.set_of_upper_words=set()
         self.dic_for_later= {}
         self.postingDic={}
@@ -33,7 +23,7 @@ class Indexer:
     def add_new_doc(self, document):
         self.number_of_documents +=1
         mechane_tf = (document.doc_length - document.size_of_entities)
-        if mechane_tf == 0: document.doc_length = 0.00001
+        if mechane_tf == 0: document.doc_length = 0.00011111111
         document_dictionary = document.term_doc_dictionary
         max_tf=-1
         for term in document_dictionary.keys():
@@ -89,11 +79,11 @@ class Indexer:
                     text = str(tweet_id) + " " + str(tf_in_doc) + " " + str(tf)
 
                     self.postingDic[term] += text + ","
-        self.details_about_docs[document.tweet_id]={}
-        self.details_about_docs[document.tweet_id]['rt']= str(document.rt)
-        self.details_about_docs[document.tweet_id]['date']= str(document.tweet_date)
-        self.details_about_docs[document.tweet_id]['max_tf']= str(max_tf)
-        self.details_about_docs[document.tweet_id]['uni_w']= str(len(document.term_doc_dictionary))
+        # self.details_about_docs[document.tweet_id]={}
+        # self.details_about_docs[document.tweet_id]['rt']= str(document.rt)
+        # self.details_about_docs[document.tweet_id]['date']= str(document.tweet_date)
+        # self.details_about_docs[document.tweet_id]['max_tf']= str(max_tf)
+        # self.details_about_docs[document.tweet_id]['uni_w']= str(len(document.term_doc_dictionary))
     def sort_dictionary_by_key(self, dictionary):
                         '''
                         sort dictionary by key
@@ -129,15 +119,22 @@ class Indexer:
         keys= self.postingDic.keys()
         for term in keys:
             text = term+":"+self.postingDic[term]+"\n"
+            # text=self.get_shorter_line(text)
             try:
                 file.write(text)
             except:
                 print(text)
                 continue
+        print("FINISH to write 200K docs to disk...")
+        print(datetime.datetime.now())
         file.close()
         self.postingDic.clear()
         self.postingDic={}
-        self.write_details_about_docs()
+        print("START to write 200K docs to DETAILS ABOUT DOCS...")
+        print(datetime.datetime.now())
+        # self.write_details_about_docs()
+        print("FINISH to write 200K docs to DETAILS ABOUT DOCS...")
+        print(datetime.datetime.now())
     def merge_posting_files(self):
         path = os.path.dirname(os.path.abspath(__file__))+'\\Posting_Files\\'
         files = []
@@ -167,7 +164,53 @@ class Indexer:
                 files = []
             else:
                 has_files_to_merge = False
+    def get_shorter_line(self,line):
+        first_split = line.split(":")
+        splited_line = first_split[1].split(",")
+        if len(splited_line)==2:
+            return line
+        array=[]
+        for i in splited_line:
+            if i=="\n":continue
+            splited_revach= i.split(" ")
+            array.append(splited_revach[0])
+        array = sorted(array, key=int, reverse=True)
+        first=array[0]
+        last_ans=[]
+        index=0
+        for word in splited_line:
+            if word == "\n": continue
+            splited_revach= word.split(" ")
+            max=array[0]
+            temp =word[0]
+            calc = int(max)-int(word.split(" ")[0])
+            if calc==0:
+                text = str(max) + " " + word[1] + " " + word[2]
+            text = str(calc)+" "+splited_line[1]+" "+splited_line[2]
+            last_ans.append(text)
+            index +=1
+        return str(first_split[0])+":"+",".join(last_ans)+"\n"
+    def compare_two_posting_file(self,idx1,idx2):
+        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
+        dic_1 = path + str(idx1) + ".txt"
+        dic_2 = path + str(idx2) + ".txt"
+        file_1 = open(path+str(idx1)+".txt", "w")
+        file_2 = open(path+str(idx2)+".txt", "w")
+        with open(dic_1) as fp_small, open(dic_2) as fp_big:
+            line_small = fp_small.readline()
+            line_big = fp_big.readline()
+            while line_small and line_big:
+
+                term_and_values_small = line_small.split(":")
+                term_small = term_and_values_small[0]
+                term_and_values_big = line_big.split(":")
+                term_big = term_and_values_big[0]
+
+
+
+
     def merge_two_posting_file_txt(self,idx1,idx2,idx3):
+        text_to_print=""
         path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
         dic_1= path+str(idx1)+".txt"
         size_1 = os.path.getsize(dic_1)
@@ -242,8 +285,6 @@ class Indexer:
                             term_and_values_small[1]+=self.dic_for_later[term_big]
                             del self.dic_for_later[term_big]
                 except:
-                    print("problem")
-                    print(line_big)
                     line_big = fp_big.readline()
                     continue
                 if term_big<term_small:
@@ -264,19 +305,25 @@ class Indexer:
                             if item not in values:
                                 values.append(item)
                     text = term_big+":"+",".join(values)+",\n"
-                    file.write(text)
+                    text=self.get_shorter_line(text)
+                    text_to_print+= text
+                    # file.write(text)
                     line_small = fp_small.readline()
                     line_big = fp_big.readline()
                     continue
-                file.write(text)
+                text_to_print+= text
+                # file.write(text)
             while line_big:
-                file.write(line_big)
+                # file.write(line_big)
+                text_to_print += line_big
                 line_big = fp_big.readline()
             while line_small:
-                file.write(line_small)
+                # file.write(line_small)
+                text_to_print += line_small
                 line_small = fp_small.readline()
         fp_small.close()
         fp_big.close()
+        file.write(text_to_print)
         file.close()
     def split_posting_file_and_create_inverted_index(self):
         path_posting_file = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
@@ -298,15 +345,19 @@ class Indexer:
                     #inverted index
                         while line_main_posting_file!="" and line_main_posting_file[0] == letter:
                             sub_posting_file_fp.write(line_main_posting_file)
-                            term,frequency,pointer=self.get_details_from_posting_file(line=line_main_posting_file)
+                            term,frequency,pointer=self.get_details_from_posting_file_by_line(line=line_main_posting_file)
                             if term is None or frequency is None or pointer is None:
                                 counter_falta+=1
                                 print(counter_falta)
                                 line_main_posting_file = main_posting_file_fp.readline()
                                 continue
+                            if 0==int(frequency):
+                                print(term)
+                                line_main_posting_file = main_posting_file_fp.readline()
+                                continue
                             self.inverted_idx[term]={}
                             self.inverted_idx[term]['fr'] = frequency
-                            self.inverted_idx[term]['idf'] = math.log10(self.number_of_documents/frequency)
+                            self.inverted_idx[term]['idf'] = math.log10(self.number_of_documents/int(frequency))
                             self.inverted_idx[term]['pt'] = pointer
                             line_main_posting_file = main_posting_file_fp.readline()
                         sub_posting_file_fp.close()
@@ -317,20 +368,25 @@ class Indexer:
                     with open(path_posting_sub_file,'a') as sub_posting_file_fp:
                         while line_main_posting_file!="" and line_main_posting_file[0] not in array :
                             sub_posting_file_fp.write(line_main_posting_file)
-                            term,frequency,pointer=self.get_details_from_posting_file(line=line_main_posting_file,pt="nums")
+                            term,frequency,pointer=self.get_details_from_posting_file_by_line(line=line_main_posting_file,pt="nums")
                             if term is None or frequency is None or pointer is None:
                                 counter_falta+=1
                                 print(counter_falta)
                                 line_main_posting_file = main_posting_file_fp.readline()
                                 continue
+                            if 0 == int(frequency):
+                                print(term)
+                                line_main_posting_file = main_posting_file_fp.readline()
+                                continue
                             self.inverted_idx[term]={}
                             self.inverted_idx[term]['fr'] = frequency
-                            self.inverted_idx[term]['idf'] = math.log10(self.number_of_documents/frequency)
+
+                            self.inverted_idx[term]['idf'] = math.log10(self.number_of_documents/float(frequency))
                             self.inverted_idx[term]['pt'] = pointer
                             line_main_posting_file = main_posting_file_fp.readline()
                         sub_posting_file_fp.close()
                         continue
-    def get_details_from_posting_file(self,line,pt=""):
+    def get_details_from_posting_file_by_line(self,line,pt=""):
         split_double_dots = line.split(":")
         term = split_double_dots[0]
         try:
@@ -345,22 +401,83 @@ class Indexer:
             pointer="nums"
         return term,number_of_tweets,pointer
     def write_inverted_index_to_txt_file(self):
-        path = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.dirname(os.path.abspath(__file__))+"\\inverted_index\\"
         file = open(path+"inverted_index_dic.txt", "w")
         keys = self.inverted_idx.keys()
         for key in keys :
             frequency =  self.inverted_idx[key]['fr']
             idf = self.inverted_idx[key]['idf']
             pointer=  self.inverted_idx[key]['pt']
-            text = key+":"+frequency+" "+idf+" "+pointer + "\n"
+            text = key+":"+str(frequency)+" "+str(idf)+" "+str(pointer) + "\n"
             file.write(text)
         file.close()
-    def get_global_method_matrix(self,inverted_idx):
-        self.ranker.global_method_matrix(inverted_idx)
+    def load_inverted_index_to_dictionary_online(self):
+        path = os.path.dirname(os.path.abspath(__file__))+"\\inverted_index\\"
+        file = open(path+"inverted_index_dic.txt", "r")
+        inverted_index={}
+        line = file.readline()
+        while line :
+            splited_line=line.split(":")
+            term=splited_line[0]
+            inverted_index[term]={}
+            values = splited_line[1].split(" ")
+            inverted_index[term]["fr"]=values[0]
+            inverted_index[term]["idf"]=values[1]
+            inverted_index[term]["pt"]=values[2]
+            line = file.readline()
+        file.close()
+        self.inverted_index=inverted_index
+        return inverted_index
+    def get_values_in_posting_file_of_dictionary_term(self,term,pointer):
+        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
+        file = open(path+str(pointer)+".txt", "w")
+        with file as fp_small:
+            line_small = fp_small.readline()
+            splited_line = line_small.split(":")
+            term_=splited_line[0]
+            if term_==term:
+                return self.get_details_about_term_in_posting_file(splited_line[1])
+        file.close()
+    def get_details_about_term_in_posting_file(self,line):
+        details_dic={}
+        splited_line = line.split(",")
+        for i in splited_line:
+            details_array = i.split(" ")
+            if i!="\n":
+                tweet_id = details_array[0]
+                details_dic[tweet_id]={}
+                details_dic[tweet_id]['fr']= details_array[1]
+                details_dic[tweet_id]['tf']= details_array[2]
+        return details_dic
+    def get_details_about_term_in_inverted_index(self,term):
+        dic=None
+        if term in self.inverted_index.keys():
+            self.inverted_index[term]
+            dic["fr"]=self.inverted_index[term]["fr"]
+            dic["idf"]=self.inverted_index[term]["idf"]
+            dic["pt"]=self.inverted_index[term]["pt"]
+            return dic
+        return dic
+    @staticmethod
+    def load_inverted_index_to_dictionary_offline():
+        path = os.path.dirname(os.path.abspath(__file__))
+        file = open(path+"\\inverted_index_dic.txt", "w")
+        inverted_index={}
+        line = file.readline()
+        while line :
+            splited_line=line.split(":")
+            term=splited_line[0]
+            inverted_index[term]={}
+            values = splited_line[1].split(" ")
+            inverted_index[term]["fr"]=values[0]
+            inverted_index[term]["idf"]=values[1]
+            inverted_index[term]["pt"]=values[2]
+            line = file.readline()
+        file.close()
+        return inverted_index
 
-
-
-
+    def create_matrix_global_method(self):
+        g=GlobalMethod(self.inverted_index)
 
 
     # def new_sub_dict(self):

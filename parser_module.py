@@ -26,7 +26,7 @@ class Parse:
         # print(text)
         # text = "6 9 0 7a ❶ ³"
         # text = "http://rssfeeds.freep.com/~/629855571/0/freep/sports~Jim-Harbaugh-knows-this-If-his-players-can-wear-a-mask-so-can-you/?utm_campaign=snd-autopilot"
-        text = "::)) http://www.google.com/~NPL/# … |____-__||  #_stay_At_Home #stay_at_home #TrumpIsANation hello… there:) whatsup:P 'covid 19' covid'19 Donald Trump fights Covid 19 and COVID 19 and I thank him"
+        #text = "::)) http://www.google.com/~NPL/# … |____-__||  #_stay_At_Home #stay_at_home #TrumpIsANation hello… there:) whatsup:P 'covid 19' covid'19 Donald Trump fights Covid 19 and COVID 19 and I thank him"
         # text = "https://www.twitter.com 100⁰ # \ | @ ! $ % ^ & * ( ) ` ~ + = _ \ ' | : ; / ? . , } { ] [ https://  3.63 million say “not at all.” I walked in corona the Corona in Corona  covid-19 streed. COVID-19 and he found 10 million dollar for 6 percent"
         # text = "€£💐🔃🙏🏻❤⬇🐮💗，🎊🎁🎉🎈🍸‘🤦🏻‍♀🕯🙏🏼🔹€4️⃣🐣👍🏼🍰🚨💥🇺🇸🚫✅❗️👇⁦👏⁩“”⚠🇦🇷‼😭😩😪🤬🤡😷😁😳😂😢🤣⑥²⁸¹❶❷❽②⑦&$.,!?,…:;^ Meet walked Donald Trump in Y'all Tom the streed and he found 10 million dollar for 6 percent https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
         self.array_names_and_entities = {}

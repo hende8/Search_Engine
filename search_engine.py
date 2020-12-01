@@ -5,6 +5,7 @@ from indexer import Indexer
 from searcher import Searcher
 import utils
 import timeit
+from global_method import GlobalMethod
 
 import datetime
 
@@ -13,6 +14,7 @@ def run_engine():
 
     :return:
     """
+
     number_of_documents = 0
     config = ConfigClass()
     r = ReadFile(corpus_path=config.get__corpusPath())
@@ -23,10 +25,63 @@ def run_engine():
     check=0
     check2=0
     parsed_doc_list = list()
-    print("start :" ,datetime.datetime.now())
-    delta=0
-    # for i in range(0,length_of_array):
-    #     if i == length_of_array - 1 or check2 == 2:
+    # indexer.split_posting_file_and_create_inverted_index()
+    # indexer.merge_two_last_posting_file()
+    # indexer.create_matrix_global_method()
+    # indexer.write_inverted_index_to_txt_file()
+    # dic={}
+    dic= indexer.load_inverted_index_to_dictionary_online()
+    gl=GlobalMethod(indexer)
+    print(dic.keys())
+    # dic = Indexer.load_inverted_index_to_dictionary_offline()
+    # print(dic.keys())
+
+
+    # print("start :" ,datetime.datetime.now())
+    # print("start to merge")
+    # indexer.merge_posting_file_round2()
+    for i in range(0,length_of_array):
+        print("Start :", datetime.datetime.now())
+        documents_list = r.get_documents(pathes[i][0], pathes[i][0])
+        for doc,j in zip(documents_list,range(len(documents_list))):
+            parsed_document = p.parse_doc(doc)
+            if parsed_document == None:
+                continue
+            parsed_doc_list.append(parsed_document)
+            number_of_documents += 1
+            if number_of_documents % 200000 == 0:
+                print(number_of_documents)
+                for doc in parsed_doc_list:
+                    indexer.add_new_doc(doc)
+                indexer.write_posting_to_txt_file_lower_upper(check2)
+                check2 += 1
+                parsed_doc_list.clear()
+                parsed_doc_list = list()
+                # test += 1
+            elif j==len(documents_list)-1 and i==length_of_array-1:
+                print("last loop")
+                print(number_of_documents)
+                for doc in parsed_doc_list:
+                    indexer.add_new_doc(doc)
+                indexer.write_posting_to_txt_file_lower_upper(check2)
+                parsed_doc_list.clear()
+                parsed_doc_list = list()
+                print(datetime.datetime.now())
+                print("@@start to merge@@")
+                indexer.merge_posting_file_round2()
+                indexer.merge_two_last_posting_file()
+                indexer.split_posting_file_and_create_inverted_index()
+                indexer.write_inverted_index_to_txt_file()
+                print("end merge :", datetime.datetime.now())
+
+
+    #
+    #
+    #
+    #
+    #     test=0
+    #     if i == length_of_array - 1:
+    #         print("Start :", datetime.datetime.now())
     #         documents_list = r.get_documents(pathes[i][0], pathes[i][0])
     #         for doc in documents_list:
     #             parsed_document = p.parse_doc(doc)
@@ -34,34 +89,35 @@ def run_engine():
     #                 continue
     #             parsed_doc_list.append(parsed_document)
     #             number_of_documents += 1
-    #             if number_of_documents%2000==0:
-    #                 print(datetime.datetime.now())
-    #                 print("finish to parse 200K docs...")
-    #                 for doc2 in parsed_doc_list:
-    #                     indexer.add_new_doc(doc2)
-    #                 indexer.write_posting_file_to_txt_file(check2)
+    #             if number_of_documents%200000==0:
+    #                 print( datetime.datetime.now())
+    #                 print("done to parse "+str(number_of_documents)+"start to add docs to posting files")
+    #                 for doc in parsed_doc_list:
+    #                     indexer.add_new_docc(doc)
+    #                 print("done to add "+str(number_of_documents)+"start to write to txt files")
+    #                 indexer.write_posting_to_txt_file_lower_upper(check2)
     #                 check2 += 1
     #                 parsed_doc_list.clear()
     #                 parsed_doc_list=list()
-    #                 print("start last docs before merge")
-    #         print(datetime.datetime.now())
-    #         print("finish!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    #                 test+=1
+    #             # elif test==2:
+    #             #     indexer.merge_posting_file_round2()
+    #             #     parsed_doc_list.clear()
+    #             #     parsed_doc_list = list()
+    #             #     print("END :", datetime.datetime.now())
+    #
     #         for doc in parsed_doc_list:
-    #             indexer.add_new_doc(doc)
+    #             indexer.add_new_docc(doc)
+    #         indexer.write_posting_to_txt_file_lower_upper(check2)
+    #         check2 += 1
     #         print(datetime.datetime.now())
-    #         print("start writing last index to disk after sherit...")
-    #         if number_of_documents == 4000:
-    #             indexer.write_posting_file_to_txt_file(check2)
-    #             check2 += 1
-    #             indexer.merge_posting_files()
-    #             indexer.split_posting_file_and_create_inverted_index()
-    #             indexer.write_inverted_index_to_txt_file()
-    #             indexer.load_inverted_index_to_dictionary_online()
-    #             # indexer.create_matrix_global_method()
-    #             parsed_doc_list.clear()
-    #             parsed_doc_list = list()
-    #             print("END :", datetime.datetime.now())
-    #             break
+    #         print("@@start to merge@@")
+    #         indexer.merge_posting_file_round2()
+    #         print("end merge :" ,datetime.datetime.now())
+    #
+    #         parsed_doc_list.clear()
+    #         parsed_doc_list = list()
+    #         print("END :", datetime.datetime.now())
     #     documents_list = r.get_documents(pathes[i][0],pathes[i][0])
     #     for document in documents_list:
     #         parsed_document = p.parse_doc(document)
@@ -71,18 +127,14 @@ def run_engine():
     #         # if number_of_documents%20000==0:
     #         #     print(number_of_documents)
     #         parsed_doc_list.append(parsed_document)
-    #         if number_of_documents%2000==0:
+    #         if number_of_documents%200000==0:
     #             print(datetime.datetime.now())
     #             print("finish to parse 200K docs...")
     #             for doc in parsed_doc_list:
-    #                 indexer.add_new_doc(doc)
+    #                 indexer.add_new_docc(doc)
     #             print(datetime.datetime.now())
-    #             print("start to write 200K docs to disk...")
-    #             indexer.write_posting_file_to_txt_file(check2)
-    #             print("finish to write 200K docs to disk...")
-    #             print(datetime.datetime.now())
+    #             indexer.write_posting_to_txt_file_lower_upper(check2)
     #             check2 += 1
-    #
     #             # if check2==4:
     #             #     print("start to merge...")
     #             #     indexer.merge_posting_files()
@@ -91,19 +143,11 @@ def run_engine():
     #             #     indexer.load_inverted_index_to_dictionary_online()
     #             parsed_doc_list.clear()
     #             parsed_doc_list=list()
-    #             if check2 == 2:
-    #                 print("start to merge...")
-    #                 indexer.merge_posting_files()
-    #                 indexer.split_posting_file_and_create_inverted_index()
-    #                 indexer.write_inverted_index_to_txt_file()
-    #                 indexer.load_inverted_index_to_dictionary_online()
-    #                 break
-    #     break
     # print(datetime.datetime.now())
     # print("END :", datetime.datetime.now())
-
-    # stop = timeit.default_timer()
-    # print(datetime.datetime.now())
+    #
+    # # stop = timeit.default_timer()
+    # # print(datetime.datetime.now())
     # print('parse Time in minutes: ', (stop - start) / 60, "round number :",i,i+1)
     # start = timeit.default_timer()
     # documents_list.clear()
@@ -172,31 +216,17 @@ def search_and_rank_query(query, inverted_index, k):
 
     query_as_list = p.parse_sentence(query)
     searcher = Searcher(inverted_index)
-    #searcher.ranker.global_method_matrix(inverted_index)
-    relevant_docs = searcher.relevant_docs_from_posting(query_as_list, inverted_index)
+    searcher.ranker.global_method_matrix(inverted_index)
+    relevant_docs = searcher.relevant_docs_from_posting(query_as_list)
     ranked_docs = searcher.ranker.rank_relevant_doc(relevant_docs)
     return searcher.ranker.retrieve_top_k(ranked_docs, k)
 
 
 def main():
     run_engine()
-    isContinue = True
-    while isContinue is True:
-        query = input("Please enter a query: ")
-        if query.lstrip() == '':
-            print("Please enter a valid query...")
-            continue
-        k = int(input("Please enter number of docs to retrieve: "))
-        if str.isdigit(str(k)) is False or k < 0 or k > 2000:
-            print("Please enter a valid number (between 0 to 2000...")
-            continue
-        inverted_index = load_index()
-        relevant_docs = search_and_rank_query(query, inverted_index, k)
-        if relevant_docs is not None:
-            for doc in relevant_docs:
-                print('tweet id: {}, score (unique common words with query): {}'.format(doc, relevant_docs[doc]))
-            if k > len(relevant_docs):
-                print('There were only: {} tweets, out of: {}'.format(len(relevant_docs), k))
-        else:
-            print('No match to query: {}'.format(query))
+    query = input("Please enter a query: ")
+    k = int(input("Please enter number of docs to retrieve: "))
+    inverted_index = load_index()
+    for doc_tuple in search_and_rank_query(query, inverted_index, k):
+        print('tweet id: {}, score (unique common words with query): {}'.format(doc_tuple[0], doc_tuple[1]))
 # def main(corpus_path,output_path,stemming,queries,num_docs_to_retrieve):

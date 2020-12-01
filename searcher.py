@@ -8,7 +8,7 @@ import numpy as np
 
 class Searcher:
 
-    def __init__(self, inverted_index):
+    def _init_(self, inverted_index):
         """
         :param inverted_index: dictionary of inverted index
         """

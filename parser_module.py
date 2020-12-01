@@ -1,20 +1,13 @@
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 from document import Document
-from nltk.stem import WordNetLemmatizer, PorterStemmer
-from nltk import pos_tag
 import re
 import math
-import ast
-
 
 class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
         self.dictionary_term_index = {}
         self.array_names_and_entities = {}
-        self.covid_list = ["covid-19", "covid 19"]
-        self.list_percent = ["percent", "Percent", "Percentage", "percentage"]
 
     def parse_sentence(self, text, stemmer=False):
         """
@@ -22,13 +15,7 @@ class Parse:
         :param text:
         :return:
         """
-        # text= re.sub(r'http\S+|www.\S+', '', 'www.ynet.co.il')
-        # print(text)
-        # text = "6 9 0 7a ❶ ³"
-        # text = "http://rssfeeds.freep.com/~/629855571/0/freep/sports~Jim-Harbaugh-knows-this-If-his-players-can-wear-a-mask-so-can-you/?utm_campaign=snd-autopilot"
-        #text = "::)) http://www.google.com/~NPL/# … |____-__||  #_stay_At_Home #stay_at_home #TrumpIsANation hello… there:) whatsup:P 'covid 19' covid'19 Donald Trump fights Covid 19 and COVID 19 and I thank him"
-        # text = "https://www.twitter.com 100⁰ # \ | @ ! $ % ^ & * ( ) ` ~ + = _ \ ' | : ; / ? . , } { ] [ https://  3.63 million say “not at all.” I walked in corona the Corona in Corona  covid-19 streed. COVID-19 and he found 10 million dollar for 6 percent"
-        # text = "€£💐🔃🙏🏻❤⬇🐮💗，🎊🎁🎉🎈🍸‘🤦🏻‍♀🕯🙏🏼🔹€4️⃣🐣👍🏼🍰🚨💥🇺🇸🚫✅❗️👇⁦👏⁩“”⚠🇦🇷‼😭😩😪🤬🤡😷😁😳😂😢🤣⑥²⁸¹❶❷❽②⑦&$.,!?,…:;^ Meet walked Donald Trump in Y'all Tom the streed and he found 10 million dollar for 6 percent https://www.rawstory.com/2020/07/trump-to-blow-off-cdc-recommendations-and-issue-his-own-guidelines-for-reopening-schools-report"
+        list_percent = ["percent", "Percent", "Percentage", "percentage"]
         self.array_names_and_entities = {}
         self.dictionary_index = {}
         text = text.replace("\n", ". ")
@@ -65,7 +52,7 @@ class Parse:
                 ans = self.parse_hashtag(temp_word)
             elif ans == "" and word[0] == '@':
                 ans = self.remove_panctuation(word)
-            elif ans == "" and word in self.list_percent:
+            elif ans == "" and word in list_percent:
                 if idx > 0 and self.isfloat(array_text_space[idx - 1]):
                     ans = self.parse_percentage(array_text_space[idx - 1] + " " + word)
                     string_ans = string_ans[:len(string_ans) - 1 - len(ans)] + string_ans[

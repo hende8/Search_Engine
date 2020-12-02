@@ -30,9 +30,9 @@ def run_engine():
     # indexer.create_matrix_global_method()
     # indexer.write_inverted_index_to_txt_file()
     # dic={}
-    dic= indexer.load_inverted_index_to_dictionary_online()
-    gl=GlobalMethod(indexer)
-    print(dic.keys())
+    # dic= indexer.load_inverted_index_to_dictionary_online()
+    # gl=GlobalMethod(indexer)
+    # print(dic.keys())
     # dic = Indexer.load_inverted_index_to_dictionary_offline()
     # print(dic.keys())
 
@@ -40,6 +40,9 @@ def run_engine():
     # print("start :" ,datetime.datetime.now())
     # print("start to merge")
     # indexer.merge_posting_file_round2()
+
+
+    ######################################################
     for i in range(0,length_of_array):
         print("Start :", datetime.datetime.now())
         documents_list = r.get_documents(pathes[i][0], pathes[i][0])
@@ -73,8 +76,7 @@ def run_engine():
                 indexer.split_posting_file_and_create_inverted_index()
                 indexer.write_inverted_index_to_txt_file()
                 print("end merge :", datetime.datetime.now())
-
-
+    ######################################################
     #
     #
     #
@@ -213,20 +215,36 @@ def load_index():
 
 def search_and_rank_query(query, inverted_index, k):
     p = Parse()
-
     query_as_list = p.parse_sentence(query)
     searcher = Searcher(inverted_index)
-    searcher.ranker.global_method_matrix(inverted_index)
-    relevant_docs = searcher.relevant_docs_from_posting(query_as_list)
+    #searcher.ranker.global_method_matrix(inverted_index)
+    relevant_docs = searcher.relevant_docs_from_posting(query_as_list, inverted_index)
     ranked_docs = searcher.ranker.rank_relevant_doc(relevant_docs)
     return searcher.ranker.retrieve_top_k(ranked_docs, k)
 
 
 def main():
     run_engine()
-    query = input("Please enter a query: ")
-    k = int(input("Please enter number of docs to retrieve: "))
-    inverted_index = load_index()
-    for doc_tuple in search_and_rank_query(query, inverted_index, k):
-        print('tweet id: {}, score (unique common words with query): {}'.format(doc_tuple[0], doc_tuple[1]))
+    is_continue = True
+    is_loaded = False
+    while is_continue is True:
+        query = input("Please enter a query: ")
+        if query.lstrip() == '':
+            print("Please enter a valid query...")
+            continue
+        k = int(input("Please enter number of docs to retrieve: "))
+        if str.isdigit(str(k)) is False or k < 0 or k > 2000:
+            print("Please enter a valid number (between 0 to 2000...")
+            continue
+        if is_loaded is False:
+            inverted_index = load_index()
+            is_loaded = True
+        relevant_docs = search_and_rank_query(query, inverted_index, k)
+        if relevant_docs is not None:
+            for doc in relevant_docs:
+                print('tweet id: {}, score (unique common words with query): {}'.format(doc, relevant_docs[doc]))
+            if k > len(relevant_docs):
+                print('There were only: {} tweets, out of: {}'.format(len(relevant_docs), k))
+        else:
+            print('No match to query: {}'.format(query))
 # def main(corpus_path,output_path,stemming,queries,num_docs_to_retrieve):

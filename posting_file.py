@@ -1,4 +1,3 @@
-from posting_node import PostingNode
 from string import ascii_lowercase
 import os
 import json

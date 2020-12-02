@@ -1,8 +1,4 @@
 
-import pandas as pd
-from posting_file import PostingFile
-
-
 class Ranker:
     def __init__(self):
         pass

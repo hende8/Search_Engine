@@ -12,7 +12,6 @@ class Parse:
     def parse_sentence(self, text, stemmer=False):
         """
         This function tokenize, remove stop words and apply lower case for every word within the text
-        :param stemmer:
         :param text:
         :return:
         """
@@ -63,14 +62,14 @@ class Parse:
                 else:
                     ans = word
             elif ans == "" and (word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(
-                    word.lstrip('-'))) or word.replace('~', '').isdigit():
+                    word.lstrip('-')) or word.replace('~', '').isdigit()):
                 ans = self.convert_str_to_number(array_text_space, idx)
             if ans == "":
                 pre_ans = self.remove_panctuation(word)
                 if len(pre_ans) < 2: continue
                 array_ans = pre_ans.split()
                 for word_array in array_ans:
-                    if word_array.lower() in self.stop_words or len(word_array) < 2: continue
+                    if word_array.lower() in self.stop_words: continue
                     string_ans += self.add_to_dictionary(word_array.lower(), string_ans_index)
                     string_ans_index += len(word) + 1
             else:
@@ -353,16 +352,13 @@ class Parse:
         if word in smiles: return ''
         if "\n" in word: word = word.replace("\n", " ")
         if '#' in word and word[0] != '#': word = word.replace("#", "")
-        if word != '' and word[0] =='#' and len(word) < 3: return ""
         if '_' in word and '#' not in word:
             word = word.replace("_", "")
-        if '…' in word: return ""
         if '@' in word and word[0] != '@': word = word.replace("@", "")
 
         word = word.replace("-", " ")
         word = word.replace("'", "")
         word = re.sub(r'[€£€4️⃣“”‘⁦⁩‼⑥²⁸¹❶❷❽②⑦&$~’.,!…|?,…:;^"{}*=+()⁰\/[\[\]]', '', word)
-        if word != '' and word[0] == '#' and len(word) < 3: return ""
         return word
 
     def get_name_and_entities(self, entities_url, array_text_space):
@@ -388,7 +384,7 @@ class Parse:
                 self.array_names_and_entities[word] = all_places
         return tokinzed_entity_new
 
-    def parse_doc(self, doc_as_list):
+    def parse_doc(self, doc_as_list,stemmer=False):
         """
         This function takes a tweet document as list and break it into different fields
         :param doc_as_list: list re-preseting the tweet.
@@ -429,12 +425,16 @@ class Parse:
 
         for term in tokenized_text:
             if len(term) < 2: continue
+            if stemmer:
+                term = self.porter_stemmer.stem(term)
             if term not in term_dict.keys():
                 term_dict[term] = 1
             else:
                 term_dict[term] += 1
         for term in array_url_parsed:
             if len(term) < 2: continue
+            if stemmer:
+                term = self.porter_stemmer.stem(term)
             if term.lower() in self.stop_words or term == 'http' or term == 'https' or term == 'www':
                 continue
             if term not in term_dict.keys():
@@ -449,8 +449,7 @@ class Parse:
                 term_dict[term] = 1
             else:
                 term_dict[term] += 1
-        if tweet_id == "1280960968583811072":
-            print(term_dict)
+
         document = Document(tweet_id, tweet_date, full_text, url, retweet_text, retweet_url, quote_text,
                             quote_url, term_dict, len(self.array_names_and_entities), rt, doc_length)
         return document

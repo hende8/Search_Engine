@@ -1,93 +1,28 @@
 from parser_module import Parse
 from ranker import Ranker
 from indexer import Indexer
-import math
 import numpy as np
-
 
 
 class Searcher:
 
-    def _init_(self, inverted_index):
+    def __init__(self, inverted_index):
         """
         :param inverted_index: dictionary of inverted index
         """
         self.parser = Parse()
         self.ranker = Ranker()
         self.inverted_index = inverted_index
-        #self.indexer=Indexer
-    # #def relevant_docs_from_posting_old(self, query_tuple):
-    #     """
-    #     This function loads the posting list and count the amount of relevant documents per term.
-    #     :param query: query
-    #     :return: dictionary of relevant documents.
-    #     """
-    #     # with open('posting_file_18.json') as json_file:
-    #     #     posting = json.load(json_file)
-    #     # with open('inverted_dic_file_2.json') as json_file:
-    #     #     inverted = json.load(json_file)
-    #     # posting = utils.load_obj("posting")
-    #     inverted = self.inverted_index
-    #     inverted_list_ans = []
-    #     dict_tf = {}
-    #     dict_idf = {}
-    #     index = 0
-    #     query = []
-    #     for term in query_tuple[0]:
-    #         if str(term) not in query: query.append(term)
-    #         if str(term).lower() not in query: query.append(str(term).lower())
-    #         if str(term).upper() not in query: query.append(str(term).upper())
-    #     for term in query_tuple[1]:
-    #         if str(term) not in query: query.append(term)
-    #         if str(term).lower() not in query: query.append(str(term).lower())
-    #         if str(term).upper() not in query: query.append(str(term).upper())
-    #     if str(query).lstrip() == "" or str(query).lstrip() == '': return None
-    #     dic_info_term ={}
-    #     for term in query:
-    #         if term == '' or term == ' ': continue
-    #         first_letter = term[0]
-    #         dic_info_term = indexer.Indexer.get_details_about_term_in_inverted_index(term)
-    #         if 'a' <= first_letter <= 'k' or 'A' <= first_letter <= 'K':
-    #             with open('posting_file_a_k.json') as json_file:
-    #                 posting = json.load(json_file)
-    #         elif 'l' <= first_letter <= 'z' or 'L' <= first_letter <= 'Z':
-    #             with open('posting_file_l_z.json') as json_file:
-    #                 posting = json.load(json_file)
-    #         else:
-    #             with open('posting_file_hash.json') as json_file:
-    #                 posting = json.load(json_file)
-    #         try:
-    #             inverted_list_ans.append(inverted[term]["posting_pointer"])
-    #             dict_idf[term] = float(inverted[term]["idf"])
-    #         except:
-    #             continue
-    #         dic_tweets = json.loads(posting[inverted_list_ans[index]])
-    #         for tweet in dic_tweets:
-    #             if tweet["tweet_id"] in dict_tf:
-    #                 dict_tf[tweet["tweet_id"]] += float(tweet["tf"])
-    #             else:
-    #                 dict_tf[tweet["tweet_id"]] = float(tweet["tf"])
-    #         index += 1
-    #     dict_tfidf = {}
-    #     previus_tfidf = 0
-    #     for term in dict_tf:
-    #         for word in dict_idf:
-    #             value_tf = float(dict_tf[term])
-    #             value_idf = float(dict_idf[word])
-    #             multiply = float(value_idf * value_tf)
-    #             dict_tfidf[term] = float(multiply) + previus_tfidf
-    #             previus_tfidf = float(multiply)
-    #         previus_tfidf = 0
-    #     if term.lstrip() == '' or term.lstrip() == ' ': return None
-    #     return dict_tfidf
+        # self.indexer=Indexer
 
     def relevant_docs_from_posting(self, query_tuple, inverted):
         """
         This function loads the posting list and count the amount of relevant documents per term.
+        :param inverted:
+        :param query_tuple:
         :param query: query
         :return: dictionary of relevant documents.
         """
-
         # posting = utils.load_obj("posting")
         inverted_list_ans = []
         posting = {}
@@ -95,29 +30,39 @@ class Searcher:
         index = 0
         query = []
         dict_tweet_tfidf = {}
+        keys ={}
+        keys = inverted.keys()
         for term in query_tuple[0]:
-            if str(term) not in query: query.append(term)
-            if str(term).lower() not in query: query.append(str(term).lower())
-            if str(term).upper() not in query: query.append(str(term).upper())
+            if term in keys: query.append(str(term))
+            if term.upper in keys: query.append(str(term.upper))
+            if term.lower in keys: query.append(str(term.lower))
         for term in query_tuple[1]:
-            if str(term) not in query: query.append(term)
-            if str(term).lower() not in query: query.append(str(term).lower())
-            if str(term).upper() not in query: query.append(str(term).upper())
+            if term in keys:  query.append(str(term))
+            if term.upper in keys: query.append(str(term.upper))
+            if term.lower in keys: query.append(str(term.lower))
         for term in query:
             if term == '' or term == ' ': continue
-            dic_tweets = Indexer.get_values_in_posting_file_of_dictionary_term(term, str(term[0]).upper())
+            curr_word = inverted[term]
+            if 'A' <= term[0].upper() <='Z':
+                dic_tweets = Indexer.get_values_in_posting_file_of_dictionary_term(term, str(term[0]).upper())
+            else:
+                dic_tweets = Indexer.get_values_in_posting_file_of_dictionary_term(term, "nums")
+
             if len(dic_tweets) == 0: continue
-            #Indexer.get_values_in_posting_file_of_dictionary_term(inverted, term ,str(term[0]).upper())
-            #posting = indexer.Indexer.get_details_about_term_in_inverted_index(term)
+            # Indexer.get_values_in_posting_file_of_dictionary_term(inverted, term ,str(term[0]).upper())
+            # posting = indexer.Indexer.get_details_about_term_in_inverted_index(term)
             # try:
             #     inverted_list_ans.append(inverted[term]["pt"])
             # except:
             #     continue
             list_terms = []
-            #dic_tweets = json.loads(posting[inverted_list_ans[index]])
+            # dic_tweets = json.loads(posting[inverted_list_ans[index]])
 
             for tweet in dic_tweets:
-                tf_idf = float(dic_tweets[tweet]["tf"]) * float(inverted[term]["idf"])
+                try:
+                    tf_idf = round(float(dic_tweets[tweet]['tfl']) * float(curr_word["idf"]), 6)
+                except:
+                    continue
                 if tweet not in dict_tweet_tfidf:
                     dict_term_tfidf = {}
                     for term_inner in query:
@@ -135,14 +80,16 @@ class Searcher:
             dic_tweets.clear()
         dict_query = {}
         for term in query:
-            if term not in dict_query.keys(): dict_query[term] = 1
-            else: dict_query[term] += 1
+            if term not in dict_query.keys():
+                dict_query[term] = 1
+            else:
+                dict_query[term] += 1
 
         numpy_array_query = np.array(list(dict_query.values()))
         # sum_pows_query = 0
         # for values in dict_query.values():
         #     sum_pows_query += values*values
-        #dist_query = math.sqrt(sum_pows_query)
+        # dist_query = math.sqrt(sum_pows_query)
         # dict_cossine_tweet ={}
         # index = 0
         # sum_pows_doc = 0
@@ -156,10 +103,11 @@ class Searcher:
         #     dict_cossine_tweet[list(dict_tweet_tfidf.keys())[index]] = cosine_sim
         #     index += 1
 
+        index = 0
         dict_inner_product = {}
         for list_values in dict_tweet_tfidf.values():
             numpy_array_doc = np.array(list(list_values[0].values()))
-            multiply_vectors = np.dot(numpy_array_query, numpy_array_doc)
+            multiply_vectors = round(np.dot(numpy_array_query, numpy_array_doc),6)
             dict_inner_product[list(dict_tweet_tfidf.keys())[index]] = multiply_vectors
             index += 1
         return dict_inner_product

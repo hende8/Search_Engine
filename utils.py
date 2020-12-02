@@ -1,4 +1,5 @@
 import pickle
+from indexer import Indexer
 
 
 def save_obj(obj, name):
@@ -20,3 +21,7 @@ def load_obj(name):
     """
     with open(name + '.pkl', 'rb') as f:
         return pickle.load(f)
+def load_inverted_index(path):
+    return Indexer.load_inverted_index_to_dictionary_offline()
+
+

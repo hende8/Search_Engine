@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from global_method import GlobalMethod
+# from global_method import GlobalMethod
 import math
 import os
 import datetime
@@ -12,23 +12,22 @@ class Indexer:
 
         :param config: configuration file
         '''
-        self.inverted_idx={}
         self.set_of_upper_words=set()
         self.dic_for_later= {}
         self.postingDic={}
-        self.details_about_docs={}
         self.idx_posting_file_test=0
         self.counter_test=0
         self.number_of_documents=0
 
 
-
+        self.details_about_docs={}
         self.postingDic_lower={}
         self.postingDic_upper={}
+        self.inverted_index={}
     def add_new_doc(self,document):
         self.number_of_documents +=1
         mechane_tf = (document.doc_length - document.size_of_entities)
-        if mechane_tf == 0: document.doc_length = 0.00011111111
+        if mechane_tf == 0: document.doc_length = 0.01
         document_dictionary = document.term_doc_dictionary
         max_tf=-1
         for term in document_dictionary.keys():
@@ -48,20 +47,35 @@ class Indexer:
                     text =  str(tweet_id) + " " + str(tf_in_doc) + " " + str(tf)
                     self.postingDic_lower[term] = text + ","
             else:
-                term_upper = term.upper()
+                if 'A'<=term[0]<='Z':
+                    term_upper = term.upper()
+                else:
+                    term_upper=term
                 if term_upper in self.postingDic_upper:
                     text = str(tweet_id) + " " + str(tf_in_doc) + " " + str(tf)
                     self.postingDic_upper[term_upper] += text + ","
                 else:
                     text =  str(tweet_id) + " " + str(tf_in_doc) + " " + str(tf)
                     self.postingDic_upper[term_upper] = text + ","
-    def write_posting_to_txt_file_lower_upper(self,idx):
-        # self.write_details_about_docs()
+        self.details_about_docs[document.tweet_id]={}
+        self.details_about_docs[document.tweet_id]['rt']= str(document.rt)
+        self.details_about_docs[document.tweet_id]['date']= str(document.tweet_date)
+        self.details_about_docs[document.tweet_id]['max_tf']= str(max_tf)
+        self.details_about_docs[document.tweet_id]['uni_w']= str(len(document.term_doc_dictionary))
+    def write_posting_to_txt_file_lower_upper(self,idx,stemmer=False):
+        self.write_details_about_docs()
         self.postingDic_lower=self.sort_dictionary_by_key(self.postingDic_lower)
-        path = os.path.dirname(os.path.abspath(__file__))
-        if not os.path.exists(path + '\\Posting_Files\\posting_file_lower'):
-            os.mkdir(path + '\\Posting_Files\\posting_file_lower')
-        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_lower\\'
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Posting_Files\\posting_file_lower'):
+                os.mkdir(path + '\\Posting_Files\\posting_file_lower')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_lower\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Stemmer\\Posting_Files\\posting_file_lower'):
+                os.mkdir(path + '\\Stemmer\\Posting_Files\\posting_file_lower')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\posting_file_lower\\'
+
         file = open(path + str(idx) + ".txt", "w")
         self.sort_dictionary_by_key(self.postingDic_lower)
         keys = self.postingDic_lower.keys()
@@ -76,10 +90,16 @@ class Indexer:
         self.postingDic_lower.clear()
         self.postingDic_lower = {}
         self.postingDic_upper=self.sort_dictionary_by_key(self.postingDic_upper)
-        path = os.path.dirname(os.path.abspath(__file__))
-        if not os.path.exists(path + '\\Posting_Files\\posting_file_upper'):
-            os.mkdir(path + '\\Posting_Files\\posting_file_upper')
-        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_upper\\'
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Posting_Files\\posting_file_upper'):
+                os.mkdir(path + '\\Posting_Files\\posting_file_upper')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_upper\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Stemmer\\Posting_Files\\posting_file_upper'):
+                os.mkdir(path + '\\Stemmer\\Posting_Files\\posting_file_upper')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\posting_file_upper\\'
         file = open(path + str(idx) + ".txt", "w")
         self.sort_dictionary_by_key(self.postingDic_upper)
         keys = self.postingDic_upper.keys()
@@ -94,8 +114,55 @@ class Indexer:
         file.close()
         self.postingDic_upper.clear()
         self.postingDic_upper = {}
-    def merge_posting_file_round2(self):
-        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_lower'
+        self.write_details_about_docs()
+    def merge_posting_file_round2(self,stemmer=False):
+        # if not stemmer:
+        #     path = os.path.dirname(os.path.abspath(__file__))
+        #     if not os.path.exists(path + '\\Posting_Files\\posting_file_lower'):
+        #         os.mkdir(path + '\\Posting_Files\\posting_file_lower')
+        #     path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_lower\\'
+        # else:
+        #     path = os.path.dirname(os.path.abspath(__file__))
+        #     if not os.path.exists(path + '\\Stemmer\\Posting_Files\\posting_file_lower'):
+        #         os.mkdir(path + '\\Stemmer\\Posting_Files\\posting_file_lower')
+        #     path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\posting_file_lower\\'
+        # files = []
+        # has_files_to_merge = True
+        # counter = 0
+        # while has_files_to_merge:
+        #     files_in_path = os.listdir(path)
+        #     count = 0
+        #     for i in files_in_path:
+        #         files.append(int(i.split(".")[0]))
+        #         counter += 1
+        #     files.sort()
+        #     max_size = int(max(files)) + 1
+        #     even = True
+        #     if len(files) % 2 == 1:
+        #         even = False
+        #     if len(files) > 1:
+        #         is_merge = True
+        #         for i in range(0, len(files), 2):
+        #             if i + 1 == len(files) and not even:
+        #                 continue
+        #             self.merge_two_posting_file_txt_round2(files[i], files[i + 1], max_size,"posting_file_lower",stemmer=stemmer)
+        #             os.remove(path + "\\" + str(files[i]) + ".txt")
+        #             os.remove(path + "\\" + str(files[i + 1]) + ".txt")
+        #             max_size += 1
+        #         files = []
+        #     else:
+        #         has_files_to_merge = False
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Posting_Files\\posting_file_upper'):
+                os.mkdir(path + '\\Posting_Files\\posting_file_upper')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_upper\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Stemmer\\Posting_Files\\posting_file_upper'):
+                os.mkdir(path + '\\Stemmer\\Posting_Files\\posting_file_upper')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\posting_file_upper\\'
+
         files = []
         has_files_to_merge = True
         counter = 0
@@ -115,54 +182,37 @@ class Indexer:
                 for i in range(0, len(files), 2):
                     if i + 1 == len(files) and not even:
                         continue
-                    self.merge_two_posting_file_txt_round2(files[i], files[i + 1], max_size,"posting_file_lower")
+                    self.merge_two_posting_file_txt_round2(files[i], files[i + 1], max_size,"posting_file_upper",stemmer=stemmer)
                     os.remove(path + "\\" + str(files[i]) + ".txt")
                     os.remove(path + "\\" + str(files[i + 1]) + ".txt")
                     max_size += 1
                 files = []
             else:
                 has_files_to_merge = False
-        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_upper'
-        files = []
-        has_files_to_merge = True
-        counter = 0
-        while has_files_to_merge:
-            files_in_path = os.listdir(path)
-            count = 0
-            for i in files_in_path:
-                files.append(int(i.split(".")[0]))
-                counter += 1
-            files.sort()
-            max_size = int(max(files)) + 1
-            even = True
-            if len(files) % 2 == 1:
-                even = False
-            if len(files) > 1:
-                is_merge = True
-                for i in range(0, len(files), 2):
-                    if i + 1 == len(files) and not even:
-                        continue
-                    self.merge_two_posting_file_txt_round2(files[i], files[i + 1], max_size,"posting_file_upper")
-                    os.remove(path + "\\" + str(files[i]) + ".txt")
-                    os.remove(path + "\\" + str(files[i + 1]) + ".txt")
-                    max_size += 1
-                files = []
-            else:
-                has_files_to_merge = False
-    def merge_two_posting_file_txt_round2(self,idx1,idx2,idx3,case):
-        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'+case+'\\'
+    def merge_two_posting_file_txt_round2(self,idx1,idx2,idx3,case,stemmer=False):
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'+case+'\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\'+case+'\\'
         dic_1= path+str(idx1)+".txt"
-        size_1 = os.path.getsize(dic_1)
         dic_2= path+str(idx2)+".txt"
-        size_2= os.path.getsize(dic_2)
-        path = os.path.dirname(os.path.abspath(__file__))+'\\Posting_Files\\'+case+'\\'
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))+'\\Posting_Files\\'+case+'\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))+'\\Stemmer\\Posting_Files\\'+case+'\\'
         file = open(path+str(idx3)+".txt", "w")
         with open(dic_1) as dic_1_fp, open(dic_2) as dic_2_fp:
             dic_1_line = dic_1_fp.readline()
             dic_2_line = dic_2_fp.readline()
             while dic_1_line and dic_2_line:
-                dic_1_line_term,dic_1_line_details=self.get_line_details(dic_1_line)
-                dic_2_line_term,dic_2_line_details=self.get_line_details(dic_2_line)
+                dic_1_line_term, dic_1_line_details = self.get_line_details(dic_1_line)
+                if dic_1_line_term == "" or dic_1_line_details == "":
+                    dic_1_line = dic_1_fp.readline()
+                    continue
+                dic_2_line_term, dic_2_line_details = self.get_line_details(dic_2_line)
+                if dic_2_line_term == "" or dic_2_line_details == "":
+                    dic_2_line = dic_2_fp.readline()
+                    continue
                 if dic_1_line_term==dic_2_line_term:
                     detailes_merge= dic_1_line_details+dic_2_line_details
                     file.write(dic_2_line_term+":"+detailes_merge+'\n')
@@ -192,27 +242,58 @@ class Indexer:
     def get_line_details(self,line):
         line=line.rstrip()
         splited_line=line.split(":")
-        term = splited_line[0]
+        term = ""
+        list_details = ""
         try:
+            term = splited_line[0]
+            list_details=""
             list_details=splited_line[1]
         except:
-            print(term)
+            term=""
+            list_list_details = ""
         return term,list_details
-    def merge_two_last_posting_file(self):
-        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_lower\\'
+    def merge_two_last_posting_file(self,stemmer=False):
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Posting_Files\\posting_file_lower'):
+                os.mkdir(path + '\\Posting_Files\\posting_file_lower')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_lower\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Stemmer\\Posting_Files\\posting_file_lower'):
+                os.mkdir(path + '\\Stemmer\\Posting_Files\\posting_file_lower')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\posting_file_lower\\'
         files_in_path = os.listdir(path)
         dic_1= path+files_in_path[0]
-        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_upper\\'
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Posting_Files\\posting_file_upper'):
+                os.mkdir(path + '\\Posting_Files\\posting_file_upper')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_upper\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Stemmer\\Posting_Files\\posting_file_upper'):
+                os.mkdir(path + '\\Stemmer\\Posting_Files\\posting_file_upper')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\posting_file_upper\\'
         files_in_path = os.listdir(path)
         dic_2= path+files_in_path[0]
-        path = os.path.dirname(os.path.abspath(__file__))+'\\Posting_Files\\'
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))+'\\Posting_Files\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))+'\\Stemmer\\Posting_Files\\'
         file = open(path+"merge_posting_file.txt", "w")
         with open(dic_1) as dic_1_fp, open(dic_2) as dic_2_fp:
             dic_1_line = dic_1_fp.readline()
             dic_2_line = dic_2_fp.readline()
             while dic_2_line and dic_1_line:
                 dic_1_line_term, dic_1_line_details = self.get_line_details(dic_1_line)
+                if dic_1_line_term =="" or dic_1_line_details=="":
+                    dic_1_line = dic_1_fp.readline()
+                    continue
                 dic_2_line_term, dic_2_line_details = self.get_line_details(dic_2_line)
+                if dic_2_line_term =="" or dic_2_line_details=="":
+                    dic_2_line = dic_2_fp.readline()
+                    continue
                 if dic_2_line_term.lower() == dic_1_line_term:
                     detailes_merge= dic_1_line_details+dic_2_line_details
                     file.write(dic_1_line_term+":"+detailes_merge+'\n')
@@ -239,9 +320,19 @@ class Indexer:
             file.close()
             dic_1_fp.close()
             dic_2_fp.close()
-    def split_posting_file_and_create_inverted_index(self):
-        self.number_of_documents=100000*3
-        main_posting_file = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
+    def split_posting_file_and_create_inverted_index(self,stemmer=False):
+        self.number_of_documents=10**6
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Posting_Files'):
+                os.mkdir(path + '\\Posting_Files')
+            main_posting_file = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Stemmer\\Posting_Files'):
+                os.mkdir(path + '\\Stemmer\\Posting_Files')
+            main_posting_file = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\'
+
         merge_file = main_posting_file+"merge_posting_file.txt"
         array = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
         counter_falta=0
@@ -251,51 +342,154 @@ class Indexer:
         with open(merge_file) as main_posting_file_fp:
             line_main_posting_file = main_posting_file_fp.readline()
             while line_main_posting_file and line_main_posting_file!="":
-                letter= line_main_posting_file[0].upper()
-                letter_upper=letter
-                letter_lower=line_main_posting_file[0].lower()
-                if letter  in array:
-                    path_posting_sub_file=os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'+str(letter)+".txt"
+                letter= line_main_posting_file[0]
+                letter_upper = line_main_posting_file[0].upper()
+                letter_lower = line_main_posting_file[0].lower()
+                if 'A'<=letter_upper<='Z':
+                    if not stemmer:
+                        path_posting_sub_file=os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'+str(letter_upper)+".txt"
+                    else:
+                        path_posting_sub_file=os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\'+str(letter_upper)+".txt"
+
                     with open(path_posting_sub_file,'a') as sub_posting_file_fp:
-                    #inverted index
                         while line_main_posting_file!="" and (line_main_posting_file[0] == letter_upper or line_main_posting_file[0] == letter_lower) :
                             sub_posting_file_fp.write(line_main_posting_file)
                             term,frequency,pointer=self.get_details_from_posting_file_by_line(line=line_main_posting_file)
-                            if term is None or frequency is None or pointer is None:
+                            try:
+                                if term is None or frequency is None or pointer is None:
+                                    line_main_posting_file = main_posting_file_fp.readline()
+                                    continue
+                                if 0==int(frequency):
+                                    line_main_posting_file = main_posting_file_fp.readline()
+                                    continue
+                                self.inverted_index[term]={}
+                                self.inverted_index[term]['tf'] = frequency
+                                self.inverted_index[term]['idf'] = math.log10(self.number_of_documents/int(frequency))
+                                self.inverted_index[term]['pt'] = pointer
                                 line_main_posting_file = main_posting_file_fp.readline()
-                                continue
-                            if 0==int(frequency) or int(frequency)<4:
+                            except:
+                                print("error with:" ,term )
+                                del self.inverted_index[term]
                                 line_main_posting_file = main_posting_file_fp.readline()
-                                continue
-                            self.inverted_idx[term]={}
-                            self.inverted_idx[term]['fr'] = frequency
-                            self.inverted_idx[term]['idf'] = math.log10(self.number_of_documents/int(frequency))
-                            self.inverted_idx[term]['pt'] = pointer
-                            line_main_posting_file = main_posting_file_fp.readline()
                         sub_posting_file_fp.close()
                         continue
 
                 else:
-                    path_posting_sub_file=os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'+"nums.txt"
+                    if not stemmer:
+                        path_posting_sub_file=os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'+"nums.txt"
+                    else:
+                        path_posting_sub_file=os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\'+"nums.txt"
                     with open(path_posting_sub_file,'a') as sub_posting_file_fp:
                         while line_main_posting_file!="" and line_main_posting_file[0] not in array :
                             sub_posting_file_fp.write(line_main_posting_file)
                             term,frequency,pointer=self.get_details_from_posting_file_by_line(line=line_main_posting_file,pt="nums")
-                            if term is None or frequency is None or pointer is None:
-                                counter_falta+=1
-                                print(counter_falta)
+                            try:
+                                if term is None or frequency is None or pointer is None:
+                                    counter_falta+=1
+                                    print(counter_falta)
+                                    line_main_posting_file = main_posting_file_fp.readline()
+                                    continue
+                                if 0 == int(frequency) :
+                                    line_main_posting_file = main_posting_file_fp.readline()
+                                    continue
+                                self.inverted_index[term]={}
+                                self.inverted_index[term]['tf'] = frequency
+                                self.inverted_index[term]['idf'] = math.log10(self.number_of_documents/float(frequency))
+                                self.inverted_index[term]['pt'] = pointer
                                 line_main_posting_file = main_posting_file_fp.readline()
-                                continue
-                            if 0 == int(frequency) or int(frequency)<4:
+                            except:
+                                del self.inverted_index[term]
                                 line_main_posting_file = main_posting_file_fp.readline()
-                                continue
-                            self.inverted_idx[term]={}
-                            self.inverted_idx[term]['fr'] = frequency
-                            self.inverted_idx[term]['idf'] = math.log10(self.number_of_documents/float(frequency))
-                            self.inverted_idx[term]['pt'] = pointer
-                            line_main_posting_file = main_posting_file_fp.readline()
+
                         sub_posting_file_fp.close()
                         continue
+    def write_inverted_index_to_txt_file(self,stemmer=False):
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\inverted_index'):
+                os.mkdir(path + '\\inverted_index')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\inverted_index\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Stemmer\\inverted_index'):
+                os.mkdir(path + '\\Stemmer\\inverted_index')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\inverted_index\\'
+        file = open(path + "inverted_index_dic.txt", "w")
+        keys = self.inverted_index.keys()
+        for key in keys:
+            frequency = self.inverted_index[key]['tf']
+            idf = self.inverted_index[key]['idf']
+            pointer = self.inverted_index[key]['pt']
+            text = key + ":" + str(frequency) + " " + str(idf) + " " + str(pointer) + "\n"
+            file.write(text)
+        file.close()
+    def load_inverted_index_to_dictionary_online(self):
+        path = os.path.dirname(os.path.abspath(__file__)) + "\\inverted_index\\"
+        file = open(path + "inverted_index_dic.txt", "r")
+        inverted_index = {}
+        line = file.readline()
+        while line:
+            splited_line = line.split(":")
+            term = splited_line[0]
+            inverted_index[term] = {}
+            values = splited_line[1].split(" ")
+            inverted_index[term]["tf"] = values[0]
+            inverted_index[term]["idf"] = values[1]
+            inverted_index[term]["pt"] = values[2].rstrip()
+            line = file.readline()
+        file.close()
+        self.inverted_index = inverted_index
+        return inverted_index
+    @staticmethod
+    def load_inverted_index_to_dictionary_offline():
+        path = os.path.dirname(os.path.abspath(__file__))
+        file = open(path+"\\inverted_index\\inverted_index_dic.txt", "r")
+        inverted_index={}
+        line = file.readline()
+        while line :
+            splited_line=line.split(":")
+            term=splited_line[0]
+            inverted_index[term]={}
+            values = splited_line[1].split(" ")
+            inverted_index[term]['tf']=values[0]
+            inverted_index[term]['idf']=values[1]
+            inverted_index[term]['pt']=values[2].rstrip()
+            line = file.readline()
+        file.close()
+        return inverted_index
+
+    # def create_matrix_global_method(self):
+    #     g=GlobalMethod(self.inverted_index)
+    @staticmethod
+    def get_values_in_posting_file_of_dictionary_term(term, pointer):
+        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
+        file = open(path + str(pointer) + ".txt", "r")
+        dic_tweet = {}
+        with file as fp_small:
+            line_small = fp_small.readline()
+            while line_small:
+                splited_line = line_small.split(":")
+                term_ = splited_line[0]
+                if term_ == term:
+                    dic_tweet = Indexer.get_details_about_term_in_posting_file(splited_line[1])
+                    break
+                line_small = fp_small.readline()
+        file.close()
+        return dic_tweet
+
+    @staticmethod
+    def get_details_about_term_in_posting_file(line):
+        details_dic = {}
+        splited_line = line.split(",")
+        for i in splited_line:
+            details_array = i.split(" ")
+            if i != "\n":
+                tweet_id = details_array[0]
+                details_dic[tweet_id] = {}
+                details_dic[tweet_id]['tf'] = details_array[1]
+                details_dic[tweet_id]['tfl'] = details_array[2]
+        return details_dic
+
 
     # def add_new_doc(self, document):
     #     self.number_of_documents +=1
@@ -596,54 +790,7 @@ class Indexer:
         fp_big.close()
         file.close()
 
-    def write_inverted_index_to_txt_file(self):
-        path = os.path.dirname(os.path.abspath(__file__)) + "\\inverted_index\\"
-        file = open(path + "inverted_index_dic.txt", "w")
-        keys = self.inverted_idx.keys()
-        for key in keys:
-            frequency = self.inverted_idx[key]['fr']
-            idf = self.inverted_idx[key]['idf']
-            pointer = self.inverted_idx[key]['pt']
-            text = key + ":" + str(frequency) + " " + str(idf) + " " + str(pointer) + "\n"
-            file.write(text)
-        file.close()
-    def load_inverted_index_to_dictionary_online(self):
-        path = os.path.dirname(os.path.abspath(__file__)) + "\\inverted_index\\"
-        file = open(path + "inverted_index_dic.txt", "r")
-        inverted_index = {}
-        line = file.readline()
-        while line:
-            splited_line = line.split(":")
-            term = splited_line[0]
-            inverted_index[term] = {}
-            values = splited_line[1].split(" ")
-            inverted_index[term]["fr"] = values[0]
-            inverted_index[term]["idf"] = values[1]
-            inverted_index[term]["pt"] = values[2].rstrip()
-            line = file.readline()
-        file.close()
-        self.inverted_index = inverted_index
-        return inverted_index
-    @staticmethod
-    def load_inverted_index_to_dictionary_offline():
-        path = os.path.dirname(os.path.abspath(__file__))
-        file = open(path+"\\inverted_index\\inverted_index_dic.txt", "r")
-        inverted_index={}
-        line = file.readline()
-        while line :
-            splited_line=line.split(":")
-            term=splited_line[0]
-            inverted_index[term]={}
-            values = splited_line[1].split(" ")
-            inverted_index[term]["fr"]=values[0]
-            inverted_index[term]["idf"]=values[1]
-            inverted_index[term]["pt"]=values[2].rstrip()
-            line = file.readline()
-        file.close()
-        return inverted_index
 
-    def create_matrix_global_method(self):
-        g=GlobalMethod(self.inverted_index)
 
     # def split_posting_file_and_create_inverted_index(self):
     #     path_posting_file = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
@@ -714,41 +861,31 @@ class Indexer:
         except:
             return None,None,None
 
-        number_of_tweets =str(len(tweets_) -1)
+        number_of_tweets =str(len(tweets_))
         if pt=="":
             pointer = line[0]
         elif pt=="nums":
             pointer="nums"
         return term,number_of_tweets,pointer
 
-    def get_values_in_posting_file_of_dictionary_term(self,term,pointer):
-        path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\'
-        file = open(path+str(pointer)+".txt", "w")
-        with file as fp_small:
-            line_small = fp_small.readline()
-            splited_line = line_small.split(":")
-            term_=splited_line[0]
-            if term_==term:
-                return self.get_details_about_term_in_posting_file(splited_line[1])
-        file.close()
-    def get_details_about_term_in_posting_file(self,line):
-        details_dic={}
-        splited_line = line.split(",")
-        for i in splited_line:
-            details_array = i.split(" ")
-            if i!="\n":
-                tweet_id = details_array[0]
-                details_dic[tweet_id]={}
-                details_dic[tweet_id]['fr']= details_array[1]
-                details_dic[tweet_id]['tf']= details_array[2]
-        return details_dic
     def get_details_about_term_in_inverted_index(self,term):
         dic=None
         if term in self.inverted_index.keys():
-            self.inverted_index[term]
-            dic["fr"]=self.inverted_index[term]["fr"]
+            dic={}
+            dic["tf"]=self.inverted_index[term]["tf"]
             dic["idf"]=self.inverted_index[term]["idf"]
             dic["pt"]=self.inverted_index[term]["pt"]
+            return dic
+        return dic
+    @staticmethod
+
+    def get_details_about_term_in_inverted_index(term,inverted_index):
+        dic=None
+        if term in inverted_index.keys():
+            dic={}
+            dic["tf"]=inverted_index[term]["tf"]
+            dic["idf"]=inverted_index[term]["idf"]
+            dic["pt"]=inverted_index[term]["pt"]
             return dic
         return dic
 

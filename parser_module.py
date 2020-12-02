@@ -12,6 +12,7 @@ class Parse:
     def parse_sentence(self, text, stemmer=False):
         """
         This function tokenize, remove stop words and apply lower case for every word within the text
+        :param stemmer:
         :param text:
         :return:
         """
@@ -30,11 +31,13 @@ class Parse:
             ans = ""
             if word == '' or word == ' ': continue
             check_digit = self.isdigit(word)
+            if len(word) < 2 and check_digit is False: continue
             if len(word) < 2 or self.is_ascii(word) is False:
-                word = self.remove_panctuation(word)
-                if self.is_ascii(word) is False or word == '' or word == " " or len(
-                        word) < 2 or word.lower() not in self.stop_words:
-                    continue
+                if check_digit is False:
+                    word = self.remove_panctuation(word)
+                    if self.is_ascii(word) is False or word == '' or word == " " or len(
+                            word) < 2 or word.lower() not in self.stop_words:
+                        continue
             if ans == "" and self.is_url(word):
                 entities_url.append(word)
                 if "t.co" in word: continue
@@ -60,14 +63,14 @@ class Parse:
                 else:
                     ans = word
             elif ans == "" and (word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(
-                    word.lstrip('-')) or word.replace('~', '').isdigit()):
+                    word.lstrip('-'))) or word.replace('~', '').isdigit():
                 ans = self.convert_str_to_number(array_text_space, idx)
             if ans == "":
                 pre_ans = self.remove_panctuation(word)
                 if len(pre_ans) < 2: continue
                 array_ans = pre_ans.split()
                 for word_array in array_ans:
-                    if word_array.lower() in self.stop_words: continue
+                    if word_array.lower() in self.stop_words or len(word_array) < 2: continue
                     string_ans += self.add_to_dictionary(word_array.lower(), string_ans_index)
                     string_ans_index += len(word) + 1
             else:
@@ -135,10 +138,16 @@ class Parse:
             if word != phrase[1:] and word.lower() and word not in temp: temp.append(word)
         temp = [str_to_lower.lower() for str_to_lower in temp]
         temp.insert(0, original_phrase[0:len(original_phrase)].lower().replace('_', ''))
-        for word in temp:
-            if word in self.stop_words:
-                temp.remove(word)
-        return " ".join(temp)
+        i=0
+        len_temp =len(temp)
+        while i < len_temp:
+            if temp[i] in self.stop_words or len(temp[i]) < 2:
+                temp[i] = ''
+            i += 1
+        # for word in temp:
+        #     if word in self.stop_words or len(word) < 2:
+        #         temp.remove(word)
+        return " ".join(temp).lstrip().rstrip()
 
     def parse_url(self, string):
         """
@@ -336,7 +345,7 @@ class Parse:
                 """
         # chars = set('.,:;!()[]{}?=+…$&')
         if re.match(r'[^@]+@[^@]+\.[^@]+', word): return word
-        if "#" == word: return ""
+        if "#" == word or "##" == word: return ""
         if word[-2:] == "'s" or word[-2:] == "’s" or word[-2:] == "`s": word = word.replace(word[-2:], "")
         smiles = [":)", ":(", ":-]", ":-)", ";)", ";-)", ":-(", ";(", ";-(", ":-P", ":P", ":p", ":-p"]
         for smile in smiles:
@@ -344,13 +353,16 @@ class Parse:
         if word in smiles: return ''
         if "\n" in word: word = word.replace("\n", " ")
         if '#' in word and word[0] != '#': word = word.replace("#", "")
+        if word != '' and word[0] =='#' and len(word) < 3: return ""
         if '_' in word and '#' not in word:
             word = word.replace("_", "")
+        if '…' in word: return ""
         if '@' in word and word[0] != '@': word = word.replace("@", "")
 
         word = word.replace("-", " ")
         word = word.replace("'", "")
         word = re.sub(r'[€£€4️⃣“”‘⁦⁩‼⑥²⁸¹❶❷❽②⑦&$~’.,!…|?,…:;^"{}*=+()⁰\/[\[\]]', '', word)
+        if word != '' and word[0] == '#' and len(word) < 3: return ""
         return word
 
     def get_name_and_entities(self, entities_url, array_text_space):
@@ -376,7 +388,7 @@ class Parse:
                 self.array_names_and_entities[word] = all_places
         return tokinzed_entity_new
 
-    def parse_doc(self, doc_as_list):
+    def parse_doc(self, doc_as_list,stemmer=False):
         """
         This function takes a tweet document as list and break it into different fields
         :param doc_as_list: list re-preseting the tweet.
@@ -416,11 +428,17 @@ class Parse:
             return None
 
         for term in tokenized_text:
+            if len(term) < 2: continue
+            if stemmer:
+                term = self.porter_stemmer.stem(term)
             if term not in term_dict.keys():
                 term_dict[term] = 1
             else:
                 term_dict[term] += 1
         for term in array_url_parsed:
+            if len(term) < 2: continue
+            if stemmer:
+                term = self.porter_stemmer.stem(term)
             if term.lower() in self.stop_words or term == 'http' or term == 'https' or term == 'www':
                 continue
             if term not in term_dict.keys():
@@ -428,6 +446,7 @@ class Parse:
             else:
                 term_dict[term] += 1
         for term in names_and_entities.keys():
+            if len(term) < 2: continue
             if term in self.stop_words:
                 continue
             if term not in term_dict.keys():

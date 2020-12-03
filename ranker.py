@@ -1,6 +1,5 @@
 
 import pandas as pd
-from posting_file import PostingFile
 
 
 class Ranker:

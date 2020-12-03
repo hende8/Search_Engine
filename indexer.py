@@ -116,42 +116,42 @@ class Indexer:
         self.postingDic_upper = {}
         self.write_details_about_docs()
     def merge_posting_file_round2(self,stemmer=False):
-        # if not stemmer:
-        #     path = os.path.dirname(os.path.abspath(__file__))
-        #     if not os.path.exists(path + '\\Posting_Files\\posting_file_lower'):
-        #         os.mkdir(path + '\\Posting_Files\\posting_file_lower')
-        #     path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_lower\\'
-        # else:
-        #     path = os.path.dirname(os.path.abspath(__file__))
-        #     if not os.path.exists(path + '\\Stemmer\\Posting_Files\\posting_file_lower'):
-        #         os.mkdir(path + '\\Stemmer\\Posting_Files\\posting_file_lower')
-        #     path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\posting_file_lower\\'
-        # files = []
-        # has_files_to_merge = True
-        # counter = 0
-        # while has_files_to_merge:
-        #     files_in_path = os.listdir(path)
-        #     count = 0
-        #     for i in files_in_path:
-        #         files.append(int(i.split(".")[0]))
-        #         counter += 1
-        #     files.sort()
-        #     max_size = int(max(files)) + 1
-        #     even = True
-        #     if len(files) % 2 == 1:
-        #         even = False
-        #     if len(files) > 1:
-        #         is_merge = True
-        #         for i in range(0, len(files), 2):
-        #             if i + 1 == len(files) and not even:
-        #                 continue
-        #             self.merge_two_posting_file_txt_round2(files[i], files[i + 1], max_size,"posting_file_lower",stemmer=stemmer)
-        #             os.remove(path + "\\" + str(files[i]) + ".txt")
-        #             os.remove(path + "\\" + str(files[i + 1]) + ".txt")
-        #             max_size += 1
-        #         files = []
-        #     else:
-        #         has_files_to_merge = False
+        if not stemmer:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Posting_Files\\posting_file_lower'):
+                os.mkdir(path + '\\Posting_Files\\posting_file_lower')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Posting_Files\\posting_file_lower\\'
+        else:
+            path = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists(path + '\\Stemmer\\Posting_Files\\posting_file_lower'):
+                os.mkdir(path + '\\Stemmer\\Posting_Files\\posting_file_lower')
+            path = os.path.dirname(os.path.abspath(__file__)) + '\\Stemmer\\Posting_Files\\posting_file_lower\\'
+        files = []
+        has_files_to_merge = True
+        counter = 0
+        while has_files_to_merge:
+            files_in_path = os.listdir(path)
+            count = 0
+            for i in files_in_path:
+                files.append(int(i.split(".")[0]))
+                counter += 1
+            files.sort()
+            max_size = int(max(files)) + 1
+            even = True
+            if len(files) % 2 == 1:
+                even = False
+            if len(files) > 1:
+                is_merge = True
+                for i in range(0, len(files), 2):
+                    if i + 1 == len(files) and not even:
+                        continue
+                    self.merge_two_posting_file_txt_round2(files[i], files[i + 1], max_size,"posting_file_lower",stemmer=stemmer)
+                    os.remove(path + "\\" + str(files[i]) + ".txt")
+                    os.remove(path + "\\" + str(files[i + 1]) + ".txt")
+                    max_size += 1
+                files = []
+            else:
+                has_files_to_merge = False
         if not stemmer:
             path = os.path.dirname(os.path.abspath(__file__))
             if not os.path.exists(path + '\\Posting_Files\\posting_file_upper'):

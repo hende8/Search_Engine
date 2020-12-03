@@ -2,12 +2,14 @@ from nltk.corpus import stopwords
 from document import Document
 import re
 import math
+from stemmer import PorterStemmer
 
 class Parse:
     def __init__(self):
         self.stop_words = stopwords.words('english')
         self.dictionary_term_index = {}
         self.array_names_and_entities = {}
+        self.porter_stemmer = PorterStemmer()
 
     def parse_sentence(self, text, stemmer=False):
         """

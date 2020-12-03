@@ -6,26 +6,25 @@ from indexer import Indexer
 
 class GlobalMethod:
 
-    def __init__(self,indexer):
-        self.inverted_index=indexer
-        index = 0
-        # path = os.path.dirname(os.path.abspath(__file__)) + '\\inverted_index\\inverted_index_dic.txt"'
-        # if os.path.exists(path):
-        # dic = indexer.load_inverted_index_to_dictionary_online()
+    def __init__(self,inverted_index,path):
+        self.inverted_index=inverted_index
         self.matrix=pd.DataFrame()
-        self.execute_global_method_and_generate_matrix()
-        self.load_json_to_df()
+        self.path=path
+
 
     def execute_global_method_and_generate_matrix(self):
-        average_freq = int(self.calculate_average_of_frequency()*500)
+        path = os.path.dirname(os.path.abspath(__file__))
+        file =path+'\\Global_method_matrix.json'
+        if os.path.isfile(file) :
+            return self.load_json_to_df()
+        average_freq = int(self.calculate_average_of_frequency()*50)
         columns = []
         dic_of_designated_terms ={}
-        designate_terms_in_inverted_index={}
         for term in self.inverted_index.keys():
             num_of_freq = int(self.inverted_index[term]['tf'])
             if num_of_freq > average_freq:
                 dict_of_term = Indexer.get_details_about_term_in_inverted_index(term=term,inverted_index=self.inverted_index)
-                details_dic_in_inverted_index=Indexer.get_values_in_posting_file_of_dictionary_term(term=term,pointer=dict_of_term['pt'])
+                details_dic_in_inverted_index=Indexer.get_values_in_posting_file_of_dictionary_term(term=term,pointer=dict_of_term['pt'],path=self.path)
                 columns.append(term)
                 dic_of_designated_terms[term]= {}
                 dic_of_designated_terms[term]= details_dic_in_inverted_index
@@ -62,20 +61,19 @@ class GlobalMethod:
                     except:
                         print("error")
                         continue
-                freq_row = int(self.indexer.inverted_index[row]['tf'])**2
-                freq_col= int(self.indexer.inverted_index[column]['tf'])**2
+                freq_row = int(self.inverted_index[row]['tf'])**2
+                freq_col= int(self.inverted_index[column]['tf'])**2
                 val = self.calculate_frequency_and_normalize(c_i_j=int(sigma),
                                                              c_i_i=int(freq_row),
                                                              c_j_j=int(freq_col))
                 df[row][column] = val
                 df[column][row] = val
+
         df.to_json('Global_method_matrix.json')
-
-
+        print(df)
     def calculate_frequency_and_normalize(self, c_i_j, c_i_i, c_j_j):
         down = (c_i_i) + (c_j_j) - c_i_j
         return c_i_j / down
-
     def calculate_average_of_frequency(self):
         keys = self.inverted_index.keys()
         sum=0
@@ -90,14 +88,25 @@ class GlobalMethod:
             data = json.load(train_file)
             self.matrix = pd.DataFrame.from_dict(data, orient='columns')
         return self.matrix
-
     def get_values_to_expand_query(self,term):
         dic={}
+        columns = self.matrix.columns
         for column in self.matrix.columns:
             if term==column:
-                for row in column:
+                for row in self.matrix.columns:
+                    if row==column:
+                        continue
                     dic[row]=self.matrix[column][row]
-            c = Counter(dic)
-            return c.most_common(3)
-        return None
+                sorted_d = sorted((value, key) for (key, value) in dic.items())
+                sorted_d.reverse()
+                words =""
+                index =0
+                for word in sorted_d[0:3]:
+                    if index==0:
+                        words=str(word[1])
+                    else:
+                        words +=" "+str(word[1])
+                    index+=1
+                return words
+        return ""
 

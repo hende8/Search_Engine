@@ -9,12 +9,11 @@ class Parse:
         self.stop_words = stopwords.words('english')
         self.dictionary_term_index = {}
         self.array_names_and_entities = {}
-        self.porter_stemmer=PorterStemmer()
+        self.porter_stemmer = PorterStemmer()
 
     def parse_sentence(self, text, stemmer=False):
         """
         This function tokenize, remove stop words and apply lower case for every word within the text
-        :param stemmer:
         :param text:
         :return:
         """
@@ -65,14 +64,14 @@ class Parse:
                 else:
                     ans = word
             elif ans == "" and (word.lstrip('-').isdigit() or self.isfloat(word.lstrip('-')) or self.isFraction(
-                    word.lstrip('-'))) or word.replace('~', '').isdigit():
+                    word.lstrip('-')) or word.replace('~', '').isdigit()):
                 ans = self.convert_str_to_number(array_text_space, idx)
             if ans == "":
                 pre_ans = self.remove_panctuation(word)
                 if len(pre_ans) < 2: continue
                 array_ans = pre_ans.split()
                 for word_array in array_ans:
-                    if word_array.lower() in self.stop_words or len(word_array) < 2: continue
+                    if word_array.lower() in self.stop_words: continue
                     string_ans += self.add_to_dictionary(word_array.lower(), string_ans_index)
                     string_ans_index += len(word) + 1
             else:
@@ -232,78 +231,75 @@ class Parse:
         check every type of number and return it as a string. etc: 1K,1M,1B,-900,23/5,2020,2K
         :return: boolean
         """
-        try:
-            help_minus = ''
-            text_return = []
-            my_word = text_demo[idx]
-            text_demo_length = len(text_demo)
-            my_word = my_word.replace(",", "")
-            if re.search('-', my_word):
-                help_minus = '-'
-                my_word = my_word.replace("-", "")
-            if not self.isfloat(my_word): my_word = self.remove_panctuation(my_word)
-            if self.isFraction(my_word):
-                if idx + 1 == text_demo_length:
-                    return ''.join(help_minus + my_word)
-                text_return = ''.join(help_minus + my_word)
+        help_minus = ''
+        text_return = []
+        my_word = text_demo[idx]
+        text_demo_length = len(text_demo)
+        my_word = my_word.replace(",", "")
+        if re.search('-', my_word):
+            help_minus = '-'
+            my_word = my_word.replace("-", "")
+        if not self.isfloat(my_word): my_word = self.remove_panctuation(my_word)
+        if self.isFraction(my_word):
+            if idx + 1 == text_demo_length:
+                return ''.join(help_minus + my_word)
+            text_return = ''.join(help_minus + my_word)
+            token_next = text_demo[idx + 1].lower()
+            if token_next == "billion" or token_next == "billions":
+                text_return += 'B'
+                text_demo[idx + 1] = ""
+            if token_next == "million" or token_next == "millions":
+                text_return += 'M'
+                text_demo[idx + 1] = ""
+            if text_demo[idx + 1] == "thousand" or token_next == "thousands":
+                text_return += 'K'
+                text_demo[idx + 1] = ""
+            return help_minus + ''.join(text_return)
+        if my_word != '' and not math.isnan(float(my_word)):
+            number = float(my_word)
+            number_numerize = self.convert_str_to_number_kmb(number)
+            if idx + 1 < len(text_demo):
                 token_next = text_demo[idx + 1].lower()
+                number_to_input = str(number_numerize)
                 if token_next == "billion" or token_next == "billions":
-                    text_return += 'B'
-                    text_demo[idx + 1] = ""
-                if token_next == "million" or token_next == "millions":
-                    text_return += 'M'
-                    text_demo[idx + 1] = ""
-                if text_demo[idx + 1] == "thousand" or token_next == "thousands":
-                    text_return += 'K'
-                    text_demo[idx + 1] = ""
-                return help_minus + ''.join(text_return)
-            if my_word != '' and not math.isnan(float(my_word)):
-                number = float(my_word)
-                number_numerize = self.convert_str_to_number_kmb(number)
-                if idx + 1 < len(text_demo):
-                    token_next = text_demo[idx + 1].lower()
-                    number_to_input = str(number_numerize)
-                    if token_next == "billion" or token_next == "billions":
-                        if 'K' in number_numerize or 'M' in number_numerize:
-                            number_to_input = (number_to_input.translate({ord('K'): None}))
-                            number_to_input = (number_to_input.translate({ord('M'): None}))
-                            text_return.append(my_word)
-                        else:
-                            text_return.append(str(number_numerize + 'B'))
-                        text_demo[idx + 1] = ""
-
-                    elif token_next == "million" or token_next == "millions":
-                        if 'K' in number_numerize:
-                            number_to_input = (number_to_input.translate({ord('K'): None}))
-                            text_return.append(number_to_input + 'B')
-                        else:
-                            number_to_input = str(number_numerize)
-                            text_return.append(number_to_input + 'M')
-                        text_demo[idx + 1] = ""
-                    elif token_next == "thousand" or token_next == "thousands":
-                        if 'K' in number_numerize:
-                            number_to_input = (number_to_input.translate({ord('K'): None}))
-                            text_return.append(number_to_input + 'M')
-                        elif 'M' in number_numerize:
-                            number_to_input = (number_to_input.translate({ord('M'): None}))
-                            text_return.append(number_to_input + 'B')
-                        else:
-                            text_return.append(number_to_input + 'K')
-                        text_demo[idx + 1] = ""
-                    elif 1000 > number > -1000:
-                        text_return.append(number_numerize)
-                    else:
-                        text_return.append(number_numerize)
-                else:
-                    text_return.append(number_numerize)
-                if 1900 < number < 2100 and help_minus == '':
-                    if '~' in text_demo[idx]:
+                    if 'K' in number_numerize or 'M' in number_numerize:
+                        number_to_input = (number_to_input.translate({ord('K'): None}))
+                        number_to_input = (number_to_input.translate({ord('M'): None}))
                         text_return.append(my_word)
                     else:
-                        text_return.append(text_demo[idx])
-            return help_minus + ' '.join(text_return)
-        except:
-            return ""
+                        text_return.append(str(number_numerize + 'B'))
+                    text_demo[idx + 1] = ""
+
+                elif token_next == "million" or token_next == "millions":
+                    if 'K' in number_numerize:
+                        number_to_input = (number_to_input.translate({ord('K'): None}))
+                        text_return.append(number_to_input + 'B')
+                    else:
+                        number_to_input = str(number_numerize)
+                        text_return.append(number_to_input + 'M')
+                    text_demo[idx + 1] = ""
+                elif token_next == "thousand" or token_next == "thousands":
+                    if 'K' in number_numerize:
+                        number_to_input = (number_to_input.translate({ord('K'): None}))
+                        text_return.append(number_to_input + 'M')
+                    elif 'M' in number_numerize:
+                        number_to_input = (number_to_input.translate({ord('M'): None}))
+                        text_return.append(number_to_input + 'B')
+                    else:
+                        text_return.append(number_to_input + 'K')
+                    text_demo[idx + 1] = ""
+                elif 1000 > number > -1000:
+                    text_return.append(number_numerize)
+                else:
+                    text_return.append(number_numerize)
+            else:
+                text_return.append(number_numerize)
+            if 1900 < number < 2100 and help_minus == '':
+                if '~' in text_demo[idx]:
+                    text_return.append(my_word)
+                else:
+                    text_return.append(text_demo[idx])
+        return help_minus + ' '.join(text_return)
 
     def ignore_emojis(self, text):
         emoji_pattern = re.compile("["
@@ -349,7 +345,6 @@ class Parse:
                 :return: word without panctuation
                 """
         # chars = set('.,:;!()[]{}?=+…$&')
-        if word =="":return ""
         if re.match(r'[^@]+@[^@]+\.[^@]+', word): return word
         if "#" == word or "##" == word: return ""
         if word[-2:] == "'s" or word[-2:] == "’s" or word[-2:] == "`s": word = word.replace(word[-2:], "")
@@ -359,16 +354,13 @@ class Parse:
         if word in smiles: return ''
         if "\n" in word: word = word.replace("\n", " ")
         if '#' in word and word[0] != '#': word = word.replace("#", "")
-        if word != '' and word[0] =='#' and len(word) < 3: return ""
         if '_' in word and '#' not in word:
             word = word.replace("_", "")
-        if '…' in word: return ""
         if '@' in word and word[0] != '@': word = word.replace("@", "")
 
         word = word.replace("-", " ")
         word = word.replace("'", "")
         word = re.sub(r'[€£€4️⃣“”‘⁦⁩‼⑥²⁸¹❶❷❽②⑦&$~’.,!…|?,…:;^"{}*=+()⁰\/[\[\]]', '', word)
-        if word != '' and word[0] == '#' and len(word) < 3: return ""
         return word
 
     def get_name_and_entities(self, entities_url, array_text_space):

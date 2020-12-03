@@ -1,10 +1,13 @@
 class ConfigClass:
-    def __init__(self):
-        self.corpusPath = "C:\\Users\\HEN\\PycharmProjects\\Search_Engine_Project\\Data"
-        self.savedFileMainFolder = ''
+    def __init__(self,corpuspath,outputpath,stemming):
+        self.corpusPath =corpuspath
+        #### outputpath
+        self.savedFileMainFolder = outputpath
+
         self.saveFilesWithStem = self.savedFileMainFolder + "/WithStem"
         self.saveFilesWithoutStem = self.savedFileMainFolder + "/WithoutStem"
-        self.toStem = False
+        #stemmming
+        self.toStem = stemming
 
         print('Project was created successfully..')
 

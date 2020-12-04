@@ -20,6 +20,11 @@ class Indexer:
         self.config = config
 
     def add_new_doc(self,document):
+        '''
+        add new document to the posting dictionary by first letter in the term
+        :param document: tweet to dd
+        :return:
+        '''
         mechane_tf = (document.doc_length - document.size_of_entities)
         if mechane_tf == 0: document.doc_length = 0.01
         document_dictionary = document.term_doc_dictionary
@@ -57,6 +62,11 @@ class Indexer:
         self.details_about_docs[document.tweet_id]['max_tf']= str(max_tf)
         self.details_about_docs[document.tweet_id]['uni_w']= str(len(document.term_doc_dictionary))
     def write_posting_to_txt_file_lower_upper(self,idx):
+        '''
+        write the posting file of lower and upper cases
+        :param idx: idx to write to disk
+        :return:
+        '''
         self.write_details_about_docs()
         self.postingDic_lower=self.sort_dictionary_by_key(self.postingDic_lower)
         path =  self.config.savedFileMainFolder+"\\"
@@ -88,7 +98,13 @@ class Indexer:
         self.postingDic_upper.clear()
         self.postingDic_upper = {}
         self.write_details_about_docs()
-    def merge_posting_file_round2(self):
+    def merge_posting_file(self):
+        '''
+        merge every two posting files- upper and lower
+        till get 2 posting files (upper and lower)
+        tournament algorithm
+        :return:
+        '''
         path = self.config.savedFileMainFolder
         files = []
         has_files_to_merge = True
@@ -114,7 +130,7 @@ class Indexer:
                 for i in range(0, len(files), 2):
                     if i + 1 == len(files) and not even:
                         continue
-                    self.merge_two_posting_file_txt_round2(files[i], files[i + 1], str(max_size),"l")
+                    self.merge_two_posting_file_txt(files[i], files[i + 1], str(max_size),"l")
                     os.remove(path + "\\" + str(files[i]) + "_l.txt")
                     os.remove(path + "\\" + str(files[i + 1]) + "_l.txt")
                     max_size += 1
@@ -146,7 +162,7 @@ class Indexer:
                 for i in range(0, len(files), 2):
                     if i + 1 == len(files) and not even:
                         continue
-                    self.merge_two_posting_file_txt_round2(files[i], files[i + 1], str(max_size),"u")
+                    self.merge_two_posting_file_txt(files[i], files[i + 1], str(max_size),"u")
                     os.remove(path + "\\" + str(files[i]) + "_u.txt")
                     os.remove(path + "\\" + str(files[i + 1]) + "_u.txt")
                     max_size += 1
@@ -154,7 +170,15 @@ class Indexer:
             else:
                 has_files_to_merge = False
 
-    def merge_two_posting_file_txt_round2(self, idx1, idx2, idx3, case):
+    def merge_two_posting_file_txt(self, idx1, idx2, idx3, case):
+        '''
+        merge the values in posting files
+        :param idx1: origin
+        :param idx2: aim
+        :param idx3: output of those index
+        :param case:
+        :return:
+        '''
         path = self.config.savedFileMainFolder + "\\"
         dic_1 = path + str(idx1) + "_" + case + ".txt"
         dic_2 = path + str(idx2) + "_" + case + ".txt"
@@ -210,6 +234,12 @@ class Indexer:
             dic_1_fp.close()
             dic_2_fp.close()
     def get_line_details(self,line):
+        '''
+        get details about thel ine
+        term , tweet id , tf
+        :param line:
+        :return: splited line by the values
+        '''
         line=line.rstrip()
         splited_line=line.split(":")
         term = ""
@@ -223,6 +253,10 @@ class Indexer:
             list_details = ""
         return term,list_details
     def merge_two_last_posting_file(self):
+        '''
+        merge two last posting files and create a merged text file
+        :return:
+        '''
         path = self.config.savedFileMainFolder+"\\"
         files_in_path = os.listdir(path)
         list_=list()
@@ -280,6 +314,10 @@ class Indexer:
             dic_1_fp.close()
             dic_2_fp.close()
     def split_posting_file_and_create_inverted_index(self):
+        '''
+        merge posting file and create the dictionary inverted index
+        :return: inveted index
+        '''
         main_posting_file = self.config.savedFileMainFolder+ '\\'
         merge_file = main_posting_file+"merge_posting_file.txt"
         array = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
@@ -310,7 +348,7 @@ class Indexer:
                                     continue
                                 self.inverted_index[term]={}
                                 self.inverted_index[term]['tf'] = frequency
-                                self.inverted_index[term]['idf'] = math.log10(self.number_of_documents/int(frequency))
+                                self.inverted_index[term]['idf'] = math.log2(self.number_of_documents/int(frequency))
                                 self.inverted_index[term]['pt'] = pointer
                                 line_main_posting_file = main_posting_file_fp.readline()
                             except:
@@ -352,6 +390,10 @@ class Indexer:
                         sub_posting_file_fp.close()
                         continue
     def write_inverted_index_to_txt_file(self):
+        '''
+        write the dictionary to the disk
+        :return:
+        '''
         path = self.config.savedFileMainFolder
         file = open(path + "\\inverted_index_dic.txt", "w",encoding="utf-8")
         keys = self.inverted_index.keys()
@@ -363,6 +405,10 @@ class Indexer:
             file.write(text)
         file.close()
     def load_inverted_index_to_dictionary_online(self):
+        '''
+        load inverted index when has instance of indexer
+        :return:
+        '''
         path = self.config.savedFileMainFolder
         file = open(path + "\\inverted_index_dic.txt", "r")
         inverted_index = {}
@@ -381,6 +427,11 @@ class Indexer:
         return inverted_index
     @staticmethod
     def load_inverted_index_to_dictionary_offline(path):
+        '''
+        load inverted index when doesnt have an instance of Indexer
+        :param path:
+        :return:
+        '''
         file = open(path+"\\inverted_index_dic.txt", "r")
         inverted_index={}
         line = file.readline()
@@ -397,6 +448,13 @@ class Indexer:
         return inverted_index
     @staticmethod
     def get_values_in_posting_file_of_dictionary_term(term, pointer,path):
+        '''
+        get the values in the posting file by pointer
+        :param term: term get
+        :param pointer: the address
+        :param path: path to the path in disk
+        :return:
+        '''
         path = path + '\\'
         file = open(path + str(pointer) + ".txt", "r")
         dic_tweet = {}
@@ -414,6 +472,11 @@ class Indexer:
 
     @staticmethod
     def get_details_about_term_in_posting_file(line):
+        '''
+        get details about the term in posting file doesnt have an instance of indexer
+        :param line:
+        :return:
+        '''
         details_dic = {}
         splited_line = line.split(",")
         for i in splited_line:
@@ -433,6 +496,10 @@ class Indexer:
                         self.postingDic = OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
                         return self.postingDic
     def write_details_about_docs(self):
+        '''
+        details about the docs like if RT and the date
+        :return:
+        '''
         path = self.config.savedFileMainFolder
         if not os.path.exists(path+'\\Details_about_docs'):
             os.makedirs(path+'\\Details_about_docs')
@@ -450,6 +517,12 @@ class Indexer:
 
 
     def get_details_from_posting_file_by_line(self,line,pt=""):
+        '''
+        get details from posting file in a line
+        :param line:
+        :param pt:
+        :return:
+        '''
         split_double_dots = line.split(":")
         term = split_double_dots[0]
         try:
@@ -465,6 +538,11 @@ class Indexer:
         return term,number_of_tweets,pointer
 
     def get_details_about_term_in_inverted_index(self,term):
+        '''
+        get details about a term in invereted index
+        :param term:
+        :return:
+        '''
         dic=None
         if term in self.inverted_index.keys():
             dic={}
@@ -476,6 +554,12 @@ class Indexer:
     @staticmethod
 
     def get_details_about_term_in_inverted_index(term,inverted_index):
+        '''
+        get deatils about therm in inverted index
+        :param term:
+        :param inverted_index:
+        :return:
+        '''
         dic=None
         if term in inverted_index.keys():
             dic={}

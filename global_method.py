@@ -17,7 +17,8 @@ class GlobalMethod:
         file =path+'\\Global_method_matrix.json'
         if os.path.isfile(file) :
             return self.load_json_to_df()
-        average_freq = int(self.calculate_average_of_frequency()*50)
+        average_freq = int(self.calculate_average_of_frequency()*50*7)
+        print(average_freq)
         columns = []
         dic_of_designated_terms ={}
         for term in self.inverted_index.keys():
@@ -101,7 +102,7 @@ class GlobalMethod:
                 sorted_d.reverse()
                 words =""
                 index =0
-                for word in sorted_d[0:3]:
+                for word in sorted_d[0:1]:
                     if index==0:
                         words=str(word[1])
                     else:

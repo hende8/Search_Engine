@@ -74,17 +74,16 @@ def search_and_rank_query(query, inverted_index, k,path):
 
 def main(corpus_path, output_path, stemming, queries, num_doc_to_retrieve):
     run_engine(corpus_path_=corpus_path, output_path_=output_path,stemming_=stemming)
-    k = int(input("Please enter number of docs to retrieve: "))
+    # k = int(input("Please enter number of docs to retrieve: "))
     inverted_index = load_index(output_path)
     tuple_list=list()
+    index = 0
     for query in queries:
-        index = 0
         dict = search_and_rank_query(query, inverted_index, num_doc_to_retrieve,output_path)
         for key in dict.keys():
             print('tweet id: {}, score (unique common words with query): {}'.format(key, dict[key]))
             tupl = (index,key,dict[key])
             tuple_list.append(tupl)
-        write_to_csv(tuple_list)
         index+=1
 def write_to_csv(tuple_list):
     df=pd.DataFrame(tuple_list,columns=["Query_num","Tweet_id","Rank"])

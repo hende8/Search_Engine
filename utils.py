@@ -44,4 +44,27 @@ def create_folders(path):
         return path
     else:
         return path
+def read_text_queries(path):
+    path = path
+    file = open(path, encoding="utf8")
+    list=[]
+    line = file.readline()
+    while line:
+        list.append(line)
+        line = file.readline()
+    return list
+    # file_list = []
+    # file_in = open(path, encoding="utf8")
+    #
+    # while True:
+    #     try:
+    #         line = file_in.readline()
+    #         if line != '\n':
+    #             line = line.split(".", 1)[1]
+    #             line = line.split("\n", 1)[0]
+    #             file_list.append(line)
+    #     except:
+    #         break
+    # file_in.close()
+    # return file_list
 

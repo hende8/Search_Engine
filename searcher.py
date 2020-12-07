@@ -87,10 +87,11 @@ class Searcher:
         numpy_array_query = np.array(list(dict_query.values()))
         index = 0
         dict_inner_product = {}
+        keys = list(dict_tweet_tfidf.keys())
         for list_values in dict_tweet_tfidf.values():
             numpy_array_doc = np.array(list(list_values[0].values()))
             multiply_vectors = round(np.dot(numpy_array_query, numpy_array_doc),6)
-            dict_inner_product[list(dict_tweet_tfidf.keys())[index]] = multiply_vectors
+            dict_inner_product[keys[index]] = multiply_vectors
             index += 1
         return dict_inner_product
 
